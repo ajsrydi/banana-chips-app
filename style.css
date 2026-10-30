@@ -1,0 +1,71 @@
+/* Konfigurasi Global & Font */
+.stApp {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Header Utama */
+h1 {
+    font-weight: 800;
+    font-size: 1.75rem !important;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.5rem;
+}
+
+h2, h3 {
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+/* Kartu Metrik (Metric Cards) Profesional */
+[data-testid="stMetric"] {
+    background-color: var(--secondary-background-color);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px -2px rgba(0, 0, 0, 0.1);
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 0.85rem !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+[data-testid="stMetricValue"] {
+    font-size: 1.4rem !important;
+    font-weight: 800;
+}
+
+/* Tombol Utama (Buttons) */
+.stButton button {
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    transition: all 0.2s ease;
+}
+
+/* Sidebar Styling */
+[data-testid="stSidebar"] {
+    border-right: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+/* Tabel Data (Dataframes) */
+[data-testid="stDataFrame"] {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* Input Fields & Forms */
+.stTextInput input, .stNumberInput input, .stSelectbox select, .stDateInput input {
+    border-radius: 8px !important;
+}
