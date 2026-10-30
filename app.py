@@ -196,7 +196,7 @@ elif menu == "🛒 Kelola Penjualan":
           " Master Toko** terlebih dahulu!"
       )
     else:
-      # --- REKAP GLOBAL DI ATAS: TOKO APA SAJA YANG BELUM BAYAR ---
+      # --- REKAP GLOBAL DI ATAS DENGAN TANGGAL ---
       st.markdown("#### 🚨 Rekap Toko Belum Lunas (Kontrabon Aktif)")
       piutang_all = [
           item
@@ -205,16 +205,15 @@ elif menu == "🛒 Kelola Penjualan":
       ]
 
       if piutang_all:
-        df_piutang = pd.DataFrame(piutang_all)
-        df_ringkasan = (
-            df_piutang.groupby(["toko", "produk"])
-            .agg({"dikirim": "sum", "total_penjualan": "sum"})
-            .reset_index()
-        )
-        for _, row in df_ringkasan.iterrows():
+        for item in piutang_all:
+          tgl_trx = item.get("tanggal", "-")
+          nm_toko = item.get("toko", "-")
+          prd_toko = item.get("produk", "Coklat")
+          jml_kirim = item.get("dikirim", 0)
+          tot_rp = item.get("total_penjualan", 0)
           st.warning(
-              f"🏪 **{row['toko']}** [{row['produk']}] ➡️ **{row['dikirim']:,}"
-              f" pcs** belum dibayar (Rp {row['total_penjualan']:,.0f})"
+              f"📅 `{tgl_trx}` | 🏪 **{nm_toko}** [{prd_toko}] ➡️ **{jml_kirim:,}"
+              f" pcs** (Rp {tot_rp:,.0f})"
           )
       else:
         st.success("🎉 Mantap! Semua toko sudah lunas (tidak ada kontrabon aktif).")
