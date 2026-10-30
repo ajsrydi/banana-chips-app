@@ -93,7 +93,7 @@ menu = st.sidebar.selectbox(
     [
         "📊 Rekap & Dashboard",
         "🏪 Kelola Master Toko",
-        "➕ Input Penjualan",
+        "➕ Input & Kelola Penjualan",
         "💸 Input Pengeluaran",
     ],
 )
@@ -141,7 +141,7 @@ if menu == "📊 Rekap & Dashboard":
     st.info("Belum ada data pengeluaran tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 2: KELOLA MASTER TOKO (DENGAN KOLOM HARGA BERSIH)
+# MENU 2: KELOLA MASTER TOKO
 # -----------------------------------------------------------------------------
 elif menu == "🏪 Kelola Master Toko":
   st.markdown("### 🏪 Master Data Toko & Harga")
@@ -185,78 +185,167 @@ elif menu == "🏪 Kelola Master Toko":
   st.markdown("#### 📋 Daftar Toko Terdaftar")
   list_toko = fetch_data("tabel_toko")
   if list_toko:
-    # Buat DataFrame menggunakan Pandas untuk menambah kolom hitung otomatis
     df_toko = pd.DataFrame(list_toko)
-
-    # Tambahkan kolom hitung: Harga Jual - Potongan (%)
     df_toko["Harga Bersih per Pcs (Rp)"] = df_toko["harga_jual"] - (
         df_toko["harga_jual"] * df_toko["potongan_persen"] / 100
     )
-
     st.dataframe(df_toko, use_container_width=True)
   else:
     st.info("Belum ada toko yang didaftarkan.")
 
 # -----------------------------------------------------------------------------
-# MENU 3: INPUT PENJUALAN
+# MENU 3: INPUT & KELOLA PENJUALAN (DENGAN FITUR EDIT & HAPUS)
 # -----------------------------------------------------------------------------
-elif menu == "➕ Input Penjualan":
-  st.markdown("### 📝 Input Penjualan Baru")
+elif menu == "➕ Input & Kelola Penjualan":
+  st.markdown("### 📝 Kelola Catatan Penjualan")
+
+  tab1, tab2 = st.tabs(["➕ Tambah Baru", "✏️ Edit / Hapus Data"])
 
   data_toko = fetch_data("tabel_toko")
+  opsi_toko = {t["nama_toko"]: t for t in data_toko} if data_toko else {}
 
-  if not data_toko:
-    st.warning(
-        "⚠️ Belum ada data toko. Silakan daftarkan toko di menu **🏪 Kelola"
-        " Master Toko** terlebih dahulu!"
-    )
-  else:
-    opsi_toko = {t["nama_toko"]: t for t in data_toko}
-    pilihan_toko_nama = st.selectbox("Pilih Toko", list(opsi_toko.keys()))
-    toko_terpilih = opsi_toko[pilihan_toko_nama]
+  # --- TAB 1: TAMBAH PENJUALAN BARU ---
+  with tab1:
+    if not data_toko:
+      st.warning(
+          "⚠️ Belum ada data toko. Silakan daftarkan toko di menu **🏪 Kelola"
+          " Master Toko** terlebih dahulu!"
+      )
+    else:
+      pilihan_toko_nama = st.selectbox(
+          "Pilih Toko", list(opsi_toko.keys()), key="tambah_toko"
+      )
+      toko_terpilih = opsi_toko[pilihan_toko_nama]
 
-    harga_jual = toko_terpilih.get("harga_jual", 0)
-    potongan = toko_terpilih.get("potongan_persen", 0)
-    harga_bersih_pcs = harga_jual - (harga_jual * potongan / 100)
+      harga_jual = toko_terpilih.get("harga_jual", 0)
+      potongan = toko_terpilih.get("potongan_persen", 0)
+      harga_bersih_pcs = harga_jual - (harga_jual * potongan / 100)
 
-    st.info(
-        f"💡 **Harga Jual:** Rp {harga_jual:,.0f} | **Potongan:**"
-        f" {potongan}% \n\n✨ **Harga Bersih per Pcs:** Rp"
-        f" {harga_bersih_pcs:,.0f}"
-    )
-
-    with st.form("form_penjualan", clear_on_submit=True):
-      tanggal = st.date_input("Tanggal", datetime.date.today())
-      produksi = st.number_input("Jumlah Produksi / Titip", min_value=0, step=1)
-      dikirim = st.number_input("Jumlah Dikirim / Laku", min_value=0, step=1)
-
-      omset_bersih = dikirim * harga_bersih_pcs
-
-      total_penjualan = st.number_input(
-          "Total Penjualan Bersih (Rp)",
-          value=float(omset_bersih),
-          min_value=0.0,
-          step=1000.0,
-          format="%.2f",
-          help="Otomatis dihitung dari (Dikirim × Harga Bersih per Pcs)",
+      st.info(
+          f"💡 **Harga Jual:** Rp {harga_jual:,.0f} | **Potongan:**"
+          f" {potongan}% \n\n✨ **Harga Bersih per Pcs:** Rp"
+          f" {harga_bersih_pcs:,.0f}"
       )
 
-      submit_penjualan = st.form_submit_button("💾 Simpan Data Penjualan")
+      with st.form("form_penjualan_baru", clear_on_submit=True):
+        tanggal = st.date_input("Tanggal", datetime.date.today())
+        dikirim = st.number_input(
+            "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
+        )
 
-      if submit_penjualan:
-        try:
-          data_baru = {
-              "tanggal": str(tanggal),
-              "toko": pilihan_toko_nama,
-              "produksi": produksi,
-              "dikirim": dikirim,
-              "total_penjualan": total_penjualan,
-          }
-          supabase.table("tabel_penjualan").insert(data_baru).execute()
-          st.success("✅ Data penjualan berhasil disimpan!")
-          st.rerun()
-        except Exception as e:
-          st.error(f"❌ Gagal menyimpan data: {e}")
+        # Otomatis hitung total penjualan bersih
+        total_otomatis = dikirim * harga_bersih_pcs
+        st.markdown(
+            f"💰 **Total Penjualan Bersih (Otomatis):** Rp"
+            f" {total_otomatis:,.0f}"
+        )
+
+        submit_penjualan = st.form_submit_button("💾 Simpan Data Penjualan")
+
+        if submit_penjualan:
+          try:
+            data_baru = {
+                "tanggal": str(tanggal),
+                "toko": pilihan_toko_nama,
+                "dikirim": dikirim,
+                "total_penjualan": total_otomatis,
+            }
+            supabase.table("tabel_penjualan").insert(data_baru).execute()
+            st.success("✅ Data penjualan berhasil disimpan!")
+            st.rerun()
+          except Exception as e:
+            st.error(f"❌ Gagal menyimpan data: {e}")
+
+  # --- TAB 2: EDIT / HAPUS PENJUALAN ---
+  with tab2:
+    penjualan_list = fetch_data("tabel_penjualan")
+    if not penjualan_list:
+      st.info("Belum ada data penjualan untuk diedit atau dihapus.")
+    else:
+      # Buat dictionary pilihan berdasarkan ID dan ringkasan data
+      opsi_penjualan = {
+          f"ID {item['id']} | {item['tanggal']} | {item['toko']} (Dikirim: {item['dikirim']})"
+          : item
+          for item in penjualan_list
+      }
+
+      pilih_data = st.selectbox(
+          "Pilih Data Penjualan yang ingin diubah/dihapus",
+          list(opsi_penjualan.keys()),
+      )
+      data_terpilih = opsi_penjualan[pilih_data]
+
+      current_id = data_terpilih["id"]
+      current_tanggal = datetime.datetime.strptime(
+          data_terpilih["tanggal"], "%Y-%m-%d"
+      ).date()
+      current_toko = data_terpilih["toko"]
+      current_dikirim = data_terpilih["dikirim"]
+
+      with st.form("form_edit_penjualan"):
+        st.markdown(f"**Edit Data [ID: {current_id}]**")
+
+        new_tanggal = st.date_input("Tanggal", value=current_tanggal)
+
+        # Pilihan toko (pastikan toko saat ini ada di list, jika tidak default ke index 0)
+        list_toko_nama = list(opsi_toko.keys()) if opsi_toko else [current_toko]
+        default_idx = (
+            list_toko_nama.index(current_toko)
+            if current_toko in list_toko_nama
+            else 0
+        )
+        new_toko = st.selectbox(
+            "Pilih Toko", list_toko_nama, index=default_idx
+        )
+
+        new_dikirim = st.number_input(
+            "Jumlah Dikirim / Laku",
+            min_value=0,
+            step=1,
+            value=int(current_dikirim),
+        )
+
+        # Hitung harga bersih berdasarkan toko yang dipilih saat edit
+        toko_edit_obj = opsi_toko.get(new_toko, {"harga_jual": 0, "potongan_persen": 0})
+        h_jual = toko_edit_obj.get("harga_jual", 0)
+        h_pot = toko_edit_obj.get("potongan_persen", 0)
+        h_bersih_pcs = h_jual - (h_jual * h_pot / 100)
+
+        new_total = new_dikirim * h_bersih_pcs
+        st.markdown(
+            f"💰 **Total Penjualan Bersih Baru (Otomatis):** Rp"
+            f" {new_total:,.0f}"
+        )
+
+        col_update, col_delete = st.columns(2)
+        update_btn = col_update.form_submit_button("🔄 Update Data")
+        delete_btn = col_delete.form_submit_button("🗑️ Hapus Data")
+
+        if update_btn:
+          try:
+            update_payload = {
+                "tanggal": str(new_tanggal),
+                "toko": new_toko,
+                "dikirim": new_dikirim,
+                "total_penjualan": new_total,
+            }
+            supabase.table("tabel_penjualan").update(update_payload).eq(
+                "id", current_id
+            ).execute()
+            st.success(f"✅ Data ID {current_id} berhasil diperbarui!")
+            st.rerun()
+          except Exception as e:
+            st.error(f"❌ Gagal memperbarui data: {e}")
+
+        if delete_btn:
+          try:
+            supabase.table("tabel_penjualan").delete().eq(
+                "id", current_id
+            ).execute()
+            st.success(f"🗑️ Data ID {current_id} berhasil dihapus!")
+            st.rerun()
+          except Exception as e:
+            st.error(f"❌ Gagal menghapus data: {e}")
 
 # -----------------------------------------------------------------------------
 # MENU 4: INPUT PENGELUARAN
