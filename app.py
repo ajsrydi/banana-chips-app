@@ -71,7 +71,7 @@ def fetch_data(table_name):
 # Pilihan Varian Produk
 LIST_PRODUK = ["Coklat", "Matcha"]
 
-# Daftar Pilihan Barang / Bahan Pengeluaran sesuai gambar
+# Daftar Pilihan Barang / Bahan Pengeluaran
 LIST_BARANG_PENGELUARAN = [
     "keripik pisang",
     "kemasan coklat",
@@ -516,17 +516,13 @@ elif menu == "💸 Kelola Pengeluaran":
   st.markdown("### 📝 Kelola Catatan Pengeluaran")
 
   tab1, tab2, tab3 = st.tabs(
-      ["➕ Tambah Baru", "🗑️ Hapus Data", "💸 Data Pengeluaran"]
+      ["➕ Tambah Baru", "✏️ Edit & Hapus", "💸 Data Pengeluaran"]
   )
 
   with tab1:
     with st.form("form_pengeluaran", clear_on_submit=True):
       tanggal = st.date_input("Tanggal Pengeluaran", datetime.date.today())
-      
-      # Nama Barang / Bahan diubah menjadi Dropdown sesuai gambar
       nama_barang = st.selectbox("Nama Barang / Bahan", LIST_BARANG_PENGELUARAN)
-      
-      # Posisi Biaya Pengeluaran di atas, Banyak Barang di bawah
       pengeluaran = st.number_input(
           "Total Biaya Pengeluaran (Rp)", min_value=0.0, step=1000.0, format="%.2f"
       )
@@ -551,27 +547,125 @@ elif menu == "💸 Kelola Pengeluaran":
   with tab2:
     pengeluaran_list = fetch_data("tabel_pengeluaran")
     if not pengeluaran_list:
-      st.info("Belum ada data pengeluaran untuk dihapus.")
+      st.info("Belum ada data pengeluaran untuk diedit atau dihapus.")
     else:
-      opsi_keluar = {
-          f"ID {item['id']} | {item['tanggal']} | {item['nama_barang']} (Rp {item['pengeluaran']:,.0f})"
-          : item["id"]
-          for item in pengeluaran_list
-      }
-      pilih_hapus_keluar = st.selectbox(
-          "Pilih Pengeluaran yang ingin dihapus", list(opsi_keluar.keys())
+      daftar_bulan_keluar = sorted(
+          list(
+              set(
+                  str(item["tanggal"])[:7]
+                  for item in pengeluaran_list
+                  if "tanggal" in item
+              )
+          ),
+          reverse=True,
       )
-      id_keluar_dihapus = opsi_keluar[pilih_hapus_keluar]
 
-      if st.button("🗑️ Hapus Pengeluaran Ini"):
-        try:
-          supabase.table("tabel_pengeluaran").delete().eq(
-              "id", id_keluar_dihapus
-          ).execute()
-          st.success("🗑️ Data pengeluaran berhasil dihapus!")
-          st.rerun()
-        except Exception as e:
-          st.error(f"❌ Gagal menghapus: {e}")
+      if not daftar_bulan_keluar:
+        st.info("Belum ada data bulan pengeluaran.")
+      else:
+        pilih_bulan_keluar = st.selectbox(
+            "📅 Pilih Bulan Pengeluaran", daftar_bulan_keluar, key="filter_bulan_edit_keluar"
+        )
+
+        pengeluaran_filtered_bulan = [
+            item
+            for item in pengeluaran_list
+            if str(item["tanggal"]).startswith(pilih_bulan_keluar)
+        ]
+
+        if not pengeluaran_filtered_bulan:
+          st.info(f"Tidak ada data pengeluaran pada bulan {pilih_bulan_keluar}.")
+        else:
+          opsi_keluar_edit = {
+              f"ID {item['id']} | {item['tanggal']} | {item['nama_barang']} (Rp {item.get('pengeluaran', 0):,.0f})"
+              : item
+              for item in pengeluaran_filtered_bulan
+          }
+
+          pilih_data_keluar = st.selectbox(
+              "Pilih Data Pengeluaran yang ingin diubah atau dihapus",
+              list(opsi_keluar_edit.keys()),
+              key="pilih_data_edit_keluar",
+          )
+          data_terpilih_keluar = opsi_keluar_edit[pilih_data_keluar]
+
+          curr_id_k = data_terpilih_keluar["id"]
+          curr_tgl_k = datetime.datetime.strptime(
+              data_terpilih_keluar["tanggal"], "%Y-%m-%d"
+          ).date()
+          curr_barang_k = data_terpilih_keluar.get("nama_barang", LIST_BARANG_PENGELUARAN[0])
+          curr_biaya_k = data_terpilih_keluar.get("pengeluaran", 0.0)
+          curr_qty_k = data_terpilih_keluar.get("qty", 0.0)
+
+          st.markdown(f"**Edit / Hapus Data Pengeluaran [ID: {curr_id_k}]**")
+
+          new_tgl_k = st.date_input(
+              "Tanggal Pengeluaran", value=curr_tgl_k, key=f"edit_tgl_k_{curr_id_k}"
+          )
+          
+          idx_barang = (
+              LIST_BARANG_PENGELUARAN.index(curr_barang_k)
+              if curr_barang_k in LIST_BARANG_PENGELUARAN
+              else 0
+          )
+          new_barang_k = st.selectbox(
+              "Nama Barang / Bahan",
+              LIST_BARANG_PENGELUARAN,
+              index=idx_barang,
+              key=f"edit_barang_k_{curr_id_k}",
+          )
+
+          new_biaya_k = st.number_input(
+              "Total Biaya Pengeluaran (Rp)",
+              min_value=0.0,
+              step=1000.0,
+              value=float(curr_biaya_k),
+              format="%.2f",
+              key=f"edit_biaya_k_{curr_id_k}",
+          )
+          
+          new_qty_k = st.number_input(
+              "Banyak Barang",
+              min_value=0.0,
+              step=0.5,
+              value=float(curr_qty_k),
+              key=f"edit_qty_k_{curr_id_k}",
+          )
+
+          col_update_k, col_delete_k = st.columns(2)
+          if col_update_k.button(
+              "🔄 Update Data",
+              key=f"btn_update_k_{curr_id_k}",
+              use_container_width=True,
+          ):
+            try:
+              update_payload_k = {
+                  "tanggal": str(new_tgl_k),
+                  "nama_barang": new_barang_k,
+                  "pengeluaran": new_biaya_k,
+                  "qty": new_qty_k,
+              }
+              supabase.table("tabel_pengeluaran").update(update_payload_k).eq(
+                  "id", curr_id_k
+              ).execute()
+              st.success(f"✅ Data Pengeluaran ID {curr_id_k} berhasil diperbarui!")
+              st.rerun()
+            except Exception as e:
+              st.error(f"❌ Gagal memperbarui data: {e}")
+
+          if col_delete_k.button(
+              "🗑️ Hapus Data",
+              key=f"btn_delete_k_{curr_id_k}",
+              use_container_width=True,
+          ):
+            try:
+              supabase.table("tabel_pengeluaran").delete().eq(
+                  "id", curr_id_k
+              ).execute()
+              st.success(f"🗑️ Data Pengeluaran ID {curr_id_k} berhasil dihapus!")
+              st.rerun()
+            except Exception as e:
+              st.error(f"❌ Gagal menghapus data: {e}")
 
   with tab3:
     st.markdown("#### 💸 Keseluruhan Data Pengeluaran")
