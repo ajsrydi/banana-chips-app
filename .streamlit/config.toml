@@ -1,3 +1,7 @@
 [theme]
+# Warna aksen utama (tombol, tab aktif, dll)
 primaryColor = "#2563eb"
+
+# Jenis font
 font = "sans serif"
+
