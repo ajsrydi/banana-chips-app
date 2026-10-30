@@ -676,7 +676,7 @@ elif menu == "💸 Kelola Pengeluaran":
       st.info("Belum ada data pengeluaran tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 4: DASHBOARD UTAMA
+# MENU 4: DASHBOARD UTAMA (UPGRADED)
 # -----------------------------------------------------------------------------
 elif menu == "📈 Dashboard Utama":
   st.markdown("### 📈 Ringkasan Keuangan & Stok")
@@ -692,28 +692,72 @@ elif menu == "📈 Dashboard Utama":
       if "Belum" in str(item.get("status", ""))
   )
   total_biaya = sum(item.get("pengeluaran", 0) for item in pengeluaran)
+  
+  # Pengeluaran bulan ini
+  bulan_ini = str(datetime.date.today())[:7]
+  biaya_bulan_ini = sum(
+      item.get("pengeluaran", 0)
+      for item in pengeluaran
+      if str(item.get("tanggal", "")).startswith(bulan_ini)
+  )
+
   total_profit = total_omset - total_biaya
 
-  total_prod_qty = sum(item.get("jumlah_produksi", 0) for item in produksi)
-  total_kirim_qty = sum(item.get("dikirim", 0) for item in penjualan)
-  sisa_stok = total_prod_qty - total_kirim_qty
+  # Hitung Stok Gudang per Varian
+  total_prod_coklat = sum(
+      item.get("jumlah_produksi", 0)
+      for item in produksi
+      if item.get("produk", "Coklat") == "Coklat"
+  )
+  total_kirim_coklat = sum(
+      item.get("dikirim", 0)
+      for item in penjualan
+      if item.get("produk", "Coklat") == "Coklat"
+  )
+  stok_coklat = total_prod_coklat - total_kirim_coklat
 
+  total_prod_matcha = sum(
+      item.get("jumlah_produksi", 0)
+      for item in produksi
+      if item.get("produk") == "Matcha"
+  )
+  total_kirim_matcha = sum(
+      item.get("dikirim", 0)
+      for item in penjualan
+      if item.get("produk") == "Matcha"
+  )
+  stok_matcha = total_prod_matcha - total_kirim_matcha
+
+  # Peringatan Stok Menipis
+  if stok_coklat < 20 or stok_matcha < 20:
+    st.warning(
+        f"⚠️ **Peringatan Stok Menipis!** Stok Coklat: **{stok_coklat} pcs** | Stok Matcha: **{stok_matcha} pcs**. Segera jadwalkan produksi!"
+    )
+
+  # Kartu Metrik Baris 1
   col1, col2, col3 = st.columns(3)
   col1.metric("Total Omset", f"Rp {total_omset:,.0f}")
-  col2.metric("Total Belum Lunas (Kontrabon)", f"Rp {parse_piutang:,.0f}")
-  col3.metric("Estimasi Profit", f"Rp {total_profit:,.0f}")
+  col2.metric("Total Piutang (Kontrabon)", f"Rp {parse_piutang:,.0f}")
+  col3.metric("Estimasi Profit Bersih", f"Rp {total_profit:,.0f}")
 
+  # Kartu Metrik Baris 2
   col4, col5, col6 = st.columns(3)
-  col4.metric("Total Produksi", f"{total_prod_qty:,} pcs")
-  col5.metric("Total Terkirim", f"{total_kirim_qty:,} pcs")
-  col6.metric("Stok Gudang", f"{sisa_stok:,} pcs")
+  col4.metric("Pengeluaran Bulan Ini", f"Rp {biaya_bulan_ini:,.0f}")
+  col5.metric("Stok Gudang Coklat", f"{stok_coklat:,} pcs")
+  col6.metric("Stok Gudang Matcha", f"{stok_matcha:,} pcs")
 
   st.markdown("---")
-  st.info(
-      "💡 **Catatan:** Rincian data transaksi penjualan dan pengeluaran dapat"
-      " dilihat langsung melalui tab di menu **Kelola Penjualan** dan **Kelola"
-      " Pengeluaran**."
-  )
+
+  # Grafik Tren Omset Penjualan Harian
+  st.markdown("#### 📊 Grafik Tren Omset Harian")
+  if penjualan:
+    df_p_chart = pd.DataFrame(penjualan)
+    if "tanggal" in df_p_chart.columns and "total_penjualan" in df_p_chart.columns:
+      df_chart_grouped = df_p_chart.groupby("tanggal")["total_penjualan"].sum().reset_index()
+      df_chart_grouped = df_chart_grouped.set_index("tanggal")
+      st.line_chart(df_chart_grouped)
+  else:
+    st.info("Belum ada data penjualan untuk ditampilkan pada grafik.")
 
 # -----------------------------------------------------------------------------
 # MENU 5: REKAP HARIAN, BULANAN, TAHUNAN
