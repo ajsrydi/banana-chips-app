@@ -1,21 +1,27 @@
 /* =========================================================
-   WANNA BE WITH U — Professional Streamlit UI
-   Mendukung Light & Dark Mode bawaan Streamlit
+   WANNA BE WITH U — Flat Professional UI
+   Light & Dark mode compatible
    ========================================================= */
 
 :root {
-  --brand: #f5b301;
-  --brand-soft: rgba(245, 179, 1, 0.14);
-  --radius-lg: 18px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
-  --transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Flat brand palette */
+  --brand: #2563eb;
+  --brand-hover: #1d4ed8;
+  --brand-soft: rgba(37, 99, 235, 0.10);
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+
+  --transition: 140ms ease;
 }
 
 /* ---------------------------------------------------------
-   DASAR APLIKASI
+   DASAR
    --------------------------------------------------------- */
 
 .stApp {
@@ -23,17 +29,23 @@
   letter-spacing: -0.01em;
 }
 
-/* Konten utama lebih lega dan fokus */
 .block-container {
-  max-width: 1120px;
-  padding-top: 1.5rem;
+  max-width: 1140px;
+  padding-top: 1.75rem;
   padding-bottom: 3.5rem;
 }
 
-/* Header Streamlit dibuat bersih */
 header[data-testid="stHeader"] {
   background: transparent;
   border: none;
+}
+
+#MainMenu {
+  visibility: hidden;
+}
+
+footer {
+  visibility: hidden;
 }
 
 /* ---------------------------------------------------------
@@ -41,32 +53,31 @@ header[data-testid="stHeader"] {
    --------------------------------------------------------- */
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 750 !important;
-  letter-spacing: -0.025em;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
   line-height: 1.25;
 }
 
 h1 {
-  font-size: clamp(1.65rem, 3vw, 2.1rem) !important;
-  margin-bottom: 0.15rem !important;
+  font-size: clamp(1.55rem, 3vw, 2rem) !important;
+  margin-bottom: 0.2rem !important;
 }
 
 h2 {
-  font-size: clamp(1.25rem, 2.2vw, 1.5rem) !important;
-  margin-top: 0.5rem !important;
+  font-size: clamp(1.2rem, 2.2vw, 1.45rem) !important;
 }
 
 h3 {
-  font-size: clamp(1.05rem, 1.8vw, 1.2rem) !important;
+  font-size: clamp(1rem, 1.8vw, 1.15rem) !important;
 }
 
 h4 {
-  font-size: 1rem !important;
-  color: var(--secondary-text-color, inherit);
+  font-size: 0.98rem !important;
+  opacity: 0.9;
 }
 
-p, label, span {
-  font-size: 0.94rem;
+p, span, label {
+  font-size: 0.92rem;
 }
 
 /* ---------------------------------------------------------
@@ -75,28 +86,27 @@ p, label, span {
 
 section[data-testid="stSidebar"] {
   border-right: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
-  box-shadow: none;
 }
 
 section[data-testid="stSidebar"] .block-container {
-  padding-top: 1.25rem;
+  padding-top: 1.5rem;
 }
 
 section[data-testid="stSidebar"] h3 {
-  font-size: 0.78rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.65;
-  margin-bottom: 0.85rem !important;
+  letter-spacing: 0.09em;
+  opacity: 0.55;
+  margin-bottom: 0.9rem !important;
 }
 
-/* Menu navigasi */
 section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
   border-radius: var(--radius-md);
   border-color: var(--border-color, rgba(128, 128, 128, 0.28));
-  background: transparent;
   min-height: 44px;
   font-weight: 600;
+  background: transparent;
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
@@ -104,7 +114,7 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
 }
 
 /* ---------------------------------------------------------
-   KARTU METRIK
+   METRIC CARDS
    --------------------------------------------------------- */
 
 [data-testid="stMetric"] {
@@ -112,26 +122,24 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
   border-radius: var(--radius-lg);
   padding: 18px 20px;
-  box-shadow: var(--shadow-sm);
-  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  transition: border-color var(--transition), background var(--transition);
 }
 
 [data-testid="stMetric"]:hover {
   border-color: var(--brand);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  background: var(--brand-soft);
 }
 
 [data-testid="stMetricLabel"] {
-  font-size: 0.8rem !important;
-  font-weight: 650;
+  font-size: 0.76rem !important;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.68;
+  letter-spacing: 0.07em;
+  opacity: 0.65;
 }
 
 [data-testid="stMetricValue"] {
-  font-size: clamp(1.25rem, 2.4vw, 1.6rem) !important;
+  font-size: clamp(1.2rem, 2.3vw, 1.55rem) !important;
   font-weight: 800 !important;
   letter-spacing: -0.03em;
 }
@@ -147,20 +155,19 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
 
 .stTabs [data-baseweb="tab-list"] {
   gap: 4px;
-  padding: 5px;
+  padding: 4px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
   background: var(--secondary-background-color, transparent);
-  box-shadow: var(--shadow-sm);
 }
 
 .stTabs [data-baseweb="tab"] {
   border-radius: var(--radius-md);
-  padding: 9px 15px;
-  font-size: 0.88rem;
+  padding: 9px 14px;
+  font-size: 0.86rem;
   font-weight: 650;
   color: var(--text-color, inherit);
-  opacity: 0.65;
+  opacity: 0.62;
   transition: background var(--transition), opacity var(--transition);
 }
 
@@ -170,8 +177,8 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
 }
 
 .stTabs [aria-selected="true"] {
-  background: var(--primary-color, var(--brand));
-  color: var(--primary-text-color, #111827) !important;
+  background: var(--brand);
+  color: #ffffff !important;
   opacity: 1;
 }
 
@@ -188,7 +195,6 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
   border-radius: var(--radius-lg);
   padding: 20px;
-  box-shadow: var(--shadow-sm);
 }
 
 .stTextInput input,
@@ -206,13 +212,13 @@ div[data-baseweb="base-input"] {
 .stNumberInput input:focus,
 .stDateInput input:focus,
 div[data-baseweb="select"] > div:focus-within {
-  border-color: var(--primary-color, var(--brand)) !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px var(--brand-soft) !important;
 }
 
 label {
   font-weight: 600 !important;
-  font-size: 0.86rem !important;
+  font-size: 0.84rem !important;
   opacity: 0.85;
 }
 
@@ -228,36 +234,32 @@ label {
   min-height: 42px;
   padding: 0 18px;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  transition: transform var(--transition), filter var(--transition), box-shadow var(--transition);
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 
-/* Tombol utama */
+/* Primary */
 .stButton > button[kind="primary"],
 .stFormSubmitButton > button {
-  background: var(--primary-color, var(--brand));
-  color: var(--primary-text-color, #111827);
-  box-shadow: 0 2px 10px rgba(245, 179, 1, 0.25);
+  background: var(--brand);
+  color: #ffffff;
 }
 
 .stButton > button[kind="primary"]:hover,
 .stFormSubmitButton > button:hover {
-  filter: brightness(0.95);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(245, 179, 1, 0.3);
+  background: var(--brand-hover);
 }
 
-/* Tombol sekunder */
+/* Secondary */
 .stButton > button[kind="secondary"] {
-  background: var(--secondary-background-color, transparent);
+  background: transparent;
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.28));
   color: var(--text-color, inherit);
-  box-shadow: none;
 }
 
 .stButton > button[kind="secondary"]:hover {
-  border-color: var(--primary-color, var(--brand));
-  color: var(--primary-color, var(--brand));
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-soft);
 }
 
 /* ---------------------------------------------------------
@@ -267,26 +269,24 @@ label {
 [data-testid="stAlert"] {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
-  box-shadow: var(--shadow-sm);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
 }
 
 /* ---------------------------------------------------------
-   DATAFRAME & GRAFIK
+   TABEL & GRAFIK
    --------------------------------------------------------- */
 
 [data-testid="stDataFrame"] {
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
 }
 
 [data-testid="stDataFrame"] [role="columnheader"] {
   font-weight: 700 !important;
-  font-size: 0.82rem !important;
+  font-size: 0.78rem !important;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 [data-testid="stPlotlyChart"] {
@@ -294,7 +294,6 @@ label {
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
   border-radius: var(--radius-lg);
   padding: 12px;
-  box-shadow: var(--shadow-sm);
 }
 
 /* ---------------------------------------------------------
@@ -303,7 +302,6 @@ label {
 
 div[role="radiogroup"] label,
 div[data-testid="stCheckbox"] label {
-  background: var(--secondary-background-color, transparent);
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
   border-radius: var(--radius-md);
   padding: 10px 14px;
@@ -312,12 +310,12 @@ div[data-testid="stCheckbox"] label {
 
 div[role="radiogroup"] label:hover,
 div[data-testid="stCheckbox"] label:hover {
-  border-color: var(--primary-color, var(--brand));
+  border-color: var(--brand);
   background: var(--brand-soft);
 }
 
 /* ---------------------------------------------------------
-   MOBILE / RESPONSIVE
+   RESPONSIVE
    --------------------------------------------------------- */
 
 @media (max-width: 768px) {
@@ -331,7 +329,7 @@ div[data-testid="stCheckbox"] label:hover {
   }
 
   [data-testid="stMetricValue"] {
-    font-size: 1.25rem !important;
+    font-size: 1.2rem !important;
   }
 
   .stButton > button,
@@ -341,19 +339,10 @@ div[data-testid="stCheckbox"] label:hover {
 
   .stTabs [data-baseweb="tab"] {
     padding: 8px 10px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
   }
 
   [data-testid="stForm"] {
     padding: 15px;
   }
-}
-
-/* Hilangkan menu Streamlit default agar tampilan lebih bersih */
-#MainMenu {
-  visibility: hidden;
-}
-
-footer {
-  visibility: hidden;
 }
