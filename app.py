@@ -54,7 +54,7 @@ menu = st.sidebar.selectbox(
         "🛒 Kelola Penjualan",
         "💸 Kelola Pengeluaran",
         "📈 Dashboard Utama",
-        "📊 Rekap Bulanan & Tahunan",
+        "📊 Rekap Laporan & Stok",
         "🏪 Kelola Master Toko",
     ],
 )
@@ -774,132 +774,129 @@ elif menu == "📈 Dashboard Utama":
     st.info("Belum ada data penjualan untuk ditampilkan pada grafik.")
 
 # -----------------------------------------------------------------------------
-# MENU 5: REKAP BULANAN & TAHUNAN (REKAP HARIAN DIHAPUS)
+# MENU 5: REKAP LAPORAN & STOK (TABEL STOK & TABEL KEUANGAN)
 # -----------------------------------------------------------------------------
-elif menu == "📊 Rekap Bulanan & Tahunan":
-  st.markdown("### 📊 Rekap Bulanan & Tahunan")
+elif menu == "📊 Rekap Laporan & Stok":
+  st.markdown("### 📊 Rekap Laporan, Stok & Keuangan")
 
   penjualan = fetch_data("tabel_penjualan")
+  produksi = fetch_data("tabel_produksi")
   pengeluaran = fetch_data("tabel_pengeluaran")
 
-  df_penjualan = pd.DataFrame(penjualan) if penjualan else pd.DataFrame()
-  df_pengeluaran = (
-      pd.DataFrame(pengeluaran) if pengeluaran else pd.DataFrame()
+  tab_stok, tab_keuangan = st.tabs(
+      ["📦 Tabel Stok & Penjualan Toko", "💰 Tabel Keuangan"]
   )
 
-  tab_bulanan, tab_tahunan = st.tabs(
-      ["📆 Rekap Bulanan", "🗓️ Rekap Tahunan"]
-  )
+  with tab_stok:
+    st.markdown("#### 📦 Rekap Stok, Terbuang & Penjualan per Toko (Bulanan)")
+    
+    # Kumpulkan daftar bulan dari transaksi produksi & penjualan
+    months = set()
+    if penjualan:
+      for item in penjualan:
+        if "tanggal" in item and item["tanggal"]:
+          months.add(str(item["tanggal"])[:7])
+    if produksi:
+      for item in produksi:
+        if "tanggal" in item and item["tanggal"]:
+          months.add(str(item["tanggal"])[:7])
+    
+    months = sorted(list(months), reverse=True)
 
-  with tab_bulanan:
-    st.markdown("#### 📆 Rekap Berdasarkan Bulan")
-    if not df_penjualan.empty or not df_pengeluaran.empty:
-      df_p = df_penjualan.copy() if not df_penjualan.empty else pd.DataFrame()
-      df_e = df_pengeluaran.copy() if not df_pengeluaran.empty else pd.DataFrame()
+    if months:
+      rekap_stok_data = []
+      for m in months:
+        prod_m = sum(
+            item.get("jumlah_produksi", 0)
+            for item in produksi
+            if str(item.get("tanggal", "")).startswith(m)
+        )
+        terbuang_m = sum(
+            item.get("sisa", 0)
+            for item in penjualan
+            if str(item.get("tanggal", "")).startswith(m)
+        )
+        sbr2_m = sum(
+            item.get("dikirim", 0)
+            for item in penjualan
+            if str(item.get("tanggal", "")).startswith(m) and str(item.get("toko", "")).strip().lower() == "sbr2"
+        )
+        ajirasa3_m = sum(
+            item.get("dikirim", 0)
+            for item in penjualan
+            if str(item.get("tanggal", "")).startswith(m) and str(item.get("toko", "")).strip().lower() == "ajirasa3"
+        )
+        ajirasa2_m = sum(
+            item.get("dikirim", 0)
+            for item in penjualan
+            if str(item.get("tanggal", "")).startswith(m) and str(item.get("toko", "")).strip().lower() == "ajirasa2"
+        )
+        ajirasa1_m = sum(
+            item.get("dikirim", 0)
+            for item in penjualan
+            if str(item.get("tanggal", "")).startswith(m) and str(item.get("toko", "")).strip().lower() == "ajirasa1"
+        )
+        reseller_m = sum(
+            item.get("dikirim", 0)
+            for item in penjualan
+            if str(item.get("tanggal", "")).startswith(m) and ("reseller" in str(item.get("toko", "")).strip().lower() or str(item.get("toko", "")).strip().lower() not in ["sbr2", "ajirasa3", "ajirasa2", "ajirasa1"])
+        )
 
+        rekap_stok_data.append({
+            "Bulan": m,
+            "Produksi": prod_m,
+            "Terbuang": terbuang_m,
+            "SBR2": sbr2_m,
+            "Ajirasa3": ajirasa3_m,
+            "Ajirasa2": ajirasa2_m,
+            "Ajirasa1": ajirasa1_m,
+            "Reseller": reseller_m,
+        })
+      
+      df_stok_rekap = pd.DataFrame(rekap_stok_data)
+      st.dataframe(df_stok_rekap, use_container_width=True)
+    else:
+      st.info("Belum ada data produksi atau penjualan untuk rekap stok.")
+
+  with tab_keuangan:
+    st.markdown("#### 💰 Rekap Keuangan (Omset, Pengeluaran & Profit)")
+    df_p = pd.DataFrame(penjualan) if penjualan else pd.DataFrame()
+    df_e = pd.DataFrame(pengeluaran) if pengeluaran else pd.DataFrame()
+
+    if not df_p.empty or not df_e.empty:
       if not df_p.empty:
-        df_p["bulan"] = (
-            pd.to_datetime(df_p["tanggal"])
-            .dt.to_period("M")
-            .astype(str)
-        )
-        df_p_bulan = (
-            df_p.groupby("bulan")["total_penjualan"].sum().reset_index()
-        )
+        df_p["bulan"] = pd.to_datetime(df_p["tanggal"]).dt.to_period("M").astype(str)
+        df_p_bulan = df_p.groupby("bulan")["total_penjualan"].sum().reset_index()
       else:
         df_p_bulan = pd.DataFrame(columns=["bulan", "total_penjualan"])
 
       if not df_e.empty:
-        df_e["bulan"] = (
-            pd.to_datetime(df_e["tanggal"])
-            .dt.to_period("M")
-            .astype(str)
-        )
-        df_exp_bulan = (
-            df_e.groupby("bulan")["pengeluaran"].sum().reset_index()
-        )
+        df_e["bulan"] = pd.to_datetime(df_e["tanggal"]).dt.to_period("M").astype(str)
+        df_exp_bulan = df_e.groupby("bulan")["pengeluaran"].sum().reset_index()
       else:
         df_exp_bulan = pd.DataFrame(columns=["bulan", "pengeluaran"])
 
-      df_bulanan = pd.merge(
-          df_p_bulan, df_exp_bulan, on="bulan", how="outer"
-      ).fillna(0)
-      df_bulanan = df_bulanan.sort_values(by="bulan", ascending=False)
-      df_bulanan["profit_bersih"] = (
-          df_bulanan["total_penjualan"] - df_bulanan["pengeluaran"]
-      )
+      df_keuangan = pd.merge(df_p_bulan, df_exp_bulan, on="bulan", how="outer").fillna(0)
+      df_keuangan = df_keuangan.sort_values(by="bulan", ascending=False)
+      df_keuangan["profit_bersih"] = df_keuangan["total_penjualan"] - df_keuangan["pengeluaran"]
 
-      # Merapikan nama kolom agar lebih jelas dan profesional
-      df_bulanan = df_bulanan.rename(columns={
+      df_keuangan = df_keuangan.rename(columns={
           "bulan": "Bulan",
-          "total_penjualan": "Total Penjualan (Rp)",
+          "total_penjualan": "Total Omset (Rp)",
           "pengeluaran": "Total Pengeluaran (Rp)",
           "profit_bersih": "Profit Bersih (Rp)"
       })
 
       st.dataframe(
-          df_bulanan.style.format({
-              "Total Penjualan (Rp)": "Rp {:,.0f}",
+          df_keuangan.style.format({
+              "Total Omset (Rp)": "Rp {:,.0f}",
               "Total Pengeluaran (Rp)": "Rp {:,.0f}",
               "Profit Bersih (Rp)": "Rp {:,.0f}"
           }),
           use_container_width=True,
       )
     else:
-      st.info("Belum ada data transaksi untuk rekap bulanan.")
-
-  with tab_tahunan:
-    st.markdown("#### 🗓️ Rekap Berdasarkan Tahun")
-    if not df_penjualan.empty or not df_pengeluaran.empty:
-      df_p = df_penjualan.copy() if not df_penjualan.empty else pd.DataFrame()
-      df_e = df_pengeluaran.copy() if not df_pengeluaran.empty else pd.DataFrame()
-
-      if not df_p.empty:
-        df_p["tahun"] = (
-            pd.to_datetime(df_p["tanggal"]).dt.year.astype(str)
-        )
-        df_p_tahun = (
-            df_p.groupby("tahun")["total_penjualan"].sum().reset_index()
-        )
-      else:
-        df_p_tahun = pd.DataFrame(columns=["tahun", "total_penjualan"])
-
-      if not df_e.empty:
-        df_e["tahun"] = (
-            pd.to_datetime(df_e["tanggal"]).dt.year.astype(str)
-        )
-        df_exp_tahun = (
-            df_e.groupby("tahun")["pengeluaran"].sum().reset_index()
-        )
-      else:
-        df_exp_tahun = pd.DataFrame(columns=["tahun", "pengeluaran"])
-
-      df_tahunan = pd.merge(
-          df_p_tahun, df_exp_tahun, on="tahun", how="outer"
-      ).fillna(0)
-      df_tahunan = df_tahunan.sort_values(by="tahun", ascending=False)
-      df_tahunan["profit_bersih"] = (
-          df_tahunan["total_penjualan"] - df_tahunan["pengeluaran"]
-      )
-
-      # Merapikan nama kolom agar lebih jelas dan profesional
-      df_tahunan = df_tahunan.rename(columns={
-          "tahun": "Tahun",
-          "total_penjualan": "Total Penjualan (Rp)",
-          "pengeluaran": "Total Pengeluaran (Rp)",
-          "profit_bersih": "Profit Bersih (Rp)"
-      })
-
-      st.dataframe(
-          df_tahunan.style.format({
-              "Total Penjualan (Rp)": "Rp {:,.0f}",
-              "Total Pengeluaran (Rp)": "Rp {:,.0f}",
-              "Profit Bersih (Rp)": "Rp {:,.0f}"
-          }),
-          use_container_width=True,
-      )
-    else:
-      st.info("Belum ada data transaksi untuk rekap tahunan.")
+      st.info("Belum ada data keuangan tercatat.")
 
 # -----------------------------------------------------------------------------
 # MENU 6: KELOLA MASTER TOKO
