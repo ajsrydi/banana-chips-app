@@ -1,17 +1,21 @@
 /* =========================================================
-   WANNA BE WITH U — Soft Flat UI
-   Mengikuti Light & Dark Mode bawaan Streamlit
+   WANNA BE WITH U — Soft Navy Flat UI
+   Light & Dark Mode compatible
    ========================================================= */
 
 :root {
-  /* Soft flat accent */
-  --accent: #7c9cd1;
-  --accent-hover: #6a8bc0;
-  --accent-soft: rgba(124, 156, 209, 0.14);
+  /* Navy soft palette */
+  --navy: #1f2a44;
+  --navy-hover: #17203a;
+  --navy-soft: rgba(31, 42, 68, 0.10);
 
-  --positive: #7fb69a;
-  --warning: #d9b26a;
-  --negative: #d98a8a;
+  --accent: #7f96b8;
+  --accent-hover: #6d84a7;
+  --accent-soft: rgba(127, 150, 184, 0.14);
+
+  --positive: #7fae94;
+  --warning: #cfa96b;
+  --negative: #c98a8a;
 
   --radius-lg: 16px;
   --radius-md: 12px;
@@ -21,7 +25,7 @@
 }
 
 /* ---------------------------------------------------------
-   DASAR
+   DASAR APLIKASI
    --------------------------------------------------------- */
 
 .stApp {
@@ -107,11 +111,12 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
   min-height: 44px;
   font-weight: 600;
   background: transparent;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), background var(--transition);
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
-  border-color: var(--accent);
+  border-color: var(--navy);
+  background: var(--navy-soft);
 }
 
 /* ---------------------------------------------------------
@@ -127,8 +132,8 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
 }
 
 [data-testid="stMetric"]:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--navy);
+  background: var(--navy-soft);
 }
 
 [data-testid="stMetricLabel"] {
@@ -174,11 +179,11 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
 
 .stTabs [data-baseweb="tab"]:hover {
   opacity: 0.88;
-  background: var(--accent-soft);
+  background: var(--navy-soft);
 }
 
 .stTabs [aria-selected="true"] {
-  background: var(--accent);
+  background: var(--navy);
   color: #ffffff !important;
   opacity: 1;
 }
@@ -213,8 +218,8 @@ div[data-baseweb="base-input"] {
 .stNumberInput input:focus,
 .stDateInput input:focus,
 div[data-baseweb="select"] > div:focus-within {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+  border-color: var(--navy) !important;
+  box-shadow: 0 0 0 3px var(--navy-soft) !important;
 }
 
 label {
@@ -238,19 +243,19 @@ label {
   transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 
-/* Primary */
+/* Tombol utama */
 .stButton > button[kind="primary"],
 .stFormSubmitButton > button {
-  background: var(--accent);
+  background: var(--navy);
   color: #ffffff;
 }
 
 .stButton > button[kind="primary"]:hover,
 .stFormSubmitButton > button:hover {
-  background: var(--accent-hover);
+  background: var(--navy-hover);
 }
 
-/* Secondary */
+/* Tombol sekunder */
 .stButton > button[kind="secondary"] {
   background: transparent;
   border: 1px solid var(--border-color, rgba(128, 128, 128, 0.24));
@@ -258,9 +263,9 @@ label {
 }
 
 .stButton > button[kind="secondary"]:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--navy);
+  color: var(--navy);
+  background: var(--navy-soft);
 }
 
 /* ---------------------------------------------------------
@@ -311,8 +316,8 @@ div[data-testid="stCheckbox"] label {
 
 div[role="radiogroup"] label:hover,
 div[data-testid="stCheckbox"] label:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--navy);
+  background: var(--navy-soft);
 }
 
 /* ---------------------------------------------------------
