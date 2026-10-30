@@ -7,6 +7,56 @@ from supabase import Client, create_client
 
 # Konfigurasi halaman agar optimal di layar HP
 st.set_page_config(
+# -----------------------------------------------------------------------------
+# PENGATURAN TEMA MANUAL (LIGHT / DARK MODE)
+# -----------------------------------------------------------------------------
+if "theme_mode" not in st.session_state:
+  st.session_state.theme_mode = "Light"
+
+st.sidebar.markdown("### 🎨 Tampilan Tema")
+theme_mode = st.sidebar.radio(
+    "Pilih Mode", ["Light Mode", "Dark Mode"], horizontal=True
+)
+
+# Styling CSS dinamis untuk mengatur Light / Dark mode secara instan
+if theme_mode == "Dark Mode":
+  st.markdown(
+      """
+        <style>
+            .stApp {
+                background-color: #0e1117 !important;
+                color: #fafafa !important;
+            }
+            [data-testid="stMetric"], [data-testid="stDataFrame"], [data-testid="stSidebar"] {
+                background-color: #161b22 !important;
+                color: #fafafa !important;
+                border-color: #30363d !important;
+            }
+            h1, h2, h3, p, span, label {
+                color: #fafafa !important;
+            }
+        </style>
+        """,
+      unsafe_allow_html=True,
+  )
+else:
+  st.markdown(
+      """
+        <style>
+            .stApp {
+                background-color: #f4f6f9 !important;
+                color: #1e293b !important;
+            }
+            [data-testid="stMetric"], [data-testid="stDataFrame"], [data-testid="stSidebar"] {
+                background-color: #ffffff !important;
+                color: #1e293b !important;
+                border-color: #e2e8f0 !important;
+            }
+        </style>
+        """,
+      unsafe_allow_html=True,
+  )
+
     page_title="Wanna Be With U - Laporan", page_icon="🍌", layout="centered"
 )
 
