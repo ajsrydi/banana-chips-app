@@ -749,32 +749,59 @@ elif menu == "📈 Dashboard Utama":
 
   st.markdown("---")
 
-  # Grafik Tren Omset Penjualan Harian Menggunakan Plotly
-  st.markdown("#### 📊 Grafik Tren Omset Harian")
-  if penjualan:
-    df_p_chart = pd.DataFrame(penjualan)
-    if "tanggal" in df_p_chart.columns and "total_penjualan" in df_p_chart.columns:
-      df_chart_grouped = df_p_chart.groupby("tanggal")["total_penjualan"].sum().reset_index()
-      df_chart_grouped = df_chart_grouped.sort_values("tanggal")
-      
-      fig = px.line(
-          df_chart_grouped,
-          x="tanggal",
-          y="total_penjualan",
-          markers=True,
-          labels={"tanggal": "Tanggal", "total_penjualan": "Omset (Rp)"},
-      )
-      fig.update_layout(
-          margin=dict(l=20, r=20, t=20, b=20),
-          xaxis_title="",
-          yaxis_title="Omset (Rp)",
-      )
-      st.plotly_chart(fig, use_container_width=True)
+  # Grafik Bulanan (Pemasukan, Pengeluaran, dan Profit Bersih)
+  st.markdown("#### 📊 Grafik Kinerja Keuangan Bulanan")
+  
+  df_p = pd.DataFrame(penjualan) if penjualan else pd.DataFrame()
+  df_e = pd.DataFrame(pengeluaran) if pengeluaran else pd.DataFrame()
+
+  if not df_p.empty or not df_e.empty:
+    if not df_p.empty:
+      df_p["bulan"] = pd.to_datetime(df_p["tanggal"]).dt.to_period("M").astype(str)
+      df_p_bulan = df_p.groupby("bulan")["total_penjualan"].sum().reset_index()
+    else:
+      df_p_bulan = pd.DataFrame(columns=["bulan", "total_penjualan"])
+
+    if not df_e.empty:
+      df_e["bulan"] = pd.to_datetime(df_e["tanggal"]).dt.to_period("M").astype(str)
+      df_exp_bulan = df_e.groupby("bulan")["pengeluaran"].sum().reset_index()
+    else:
+      df_exp_bulan = pd.DataFrame(columns=["bulan", "pengeluaran"])
+
+    df_chart_bulanan = pd.merge(df_p_bulan, df_exp_bulan, on="bulan", how="outer").fillna(0)
+    df_chart_bulanan = df_chart_bulanan.sort_values("bulan")
+    df_chart_bulanan["Profit Bersih"] = (
+        df_chart_bulanan["total_penjualan"] - df_chart_bulanan["pengeluaran"]
+    )
+
+    # Ubah format DataFrame agar Plotly menampilkan legenda nama yang rapi
+    df_chart_melted = df_chart_bulanan.rename(columns={
+        "bulan": "Bulan",
+        "total_penjualan": "Pemasukan",
+        "pengeluaran": "Pengeluaran",
+        "Profit Bersih": "Profit Bersih"
+    }).melt(id_vars=["Bulan"], value_vars=["Pemasukan", "Pengeluaran", "Profit Bersih"], var_name="Kategori", value_name="Jumlah (Rp)")
+
+    fig = px.line(
+        df_chart_melted,
+        x="Bulan",
+        y="Jumlah (Rp)",
+        color="Kategori",
+        markers=True,
+        labels={"Bulan": "Bulan", "Jumlah (Rp)": "Nominal (Rp)"},
+    )
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        xaxis_title="",
+        yaxis_title="Nominal (Rp)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    st.plotly_chart(fig, use_container_width=True)
   else:
-    st.info("Belum ada data penjualan untuk ditampilkan pada grafik.")
+    st.info("Belum ada data transaksi untuk ditampilkan pada grafik bulanan.")
 
 # -----------------------------------------------------------------------------
-# MENU 5: REKAP LAPORAN & STOK (TABEL STOK & TABEL KEUANGAN)
+# MENU 5: REKAP LAPORAN & STOK
 # -----------------------------------------------------------------------------
 elif menu == "📊 Rekap Laporan & Stok":
   st.markdown("### 📊 Rekap Laporan, Stok & Keuangan")
@@ -790,7 +817,6 @@ elif menu == "📊 Rekap Laporan & Stok":
   with tab_stok:
     st.markdown("#### 📦 Rekap Stok, Terbuang & Penjualan per Toko (Bulanan)")
     
-    # Kumpulkan daftar bulan dari transaksi produksi & penjualan
     months = set()
     if penjualan:
       for item in penjualan:
