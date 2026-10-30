@@ -1,23 +1,3 @@
-import streamlit as st
-from supabase import create_client
-
-st.title("🍌 Tes Koneksi Supabase")
-
-# Inisialisasi
-url = st.secrets["supabase"]["url"]
-key = st.secrets["supabase"]["key"]
-supabase = create_client(url, key)
-
-# Coba ambil data tes
-try:
-  # Kita tes panggil tabel penjualan
-  res = supabase.table("tabel_penjualan").select("*").limit(1).execute()
-  st.success("✅ Koneksi ke Supabase BERHASIL dan Kunci Valid!")
-  st.write(res.data)
-except Exception as e:
-  st.error(f"❌ Error detail: {e}")
-
-
 import datetime
 import streamlit as st
 from supabase import Client, create_client
@@ -89,14 +69,14 @@ elif menu == "➕ Input Penjualan":
 
   with st.form("form_penjualan", clear_on_submit=True):
     tanggal = st.date_input("Tanggal", datetime.date.today())
-    store = st.text_input(
+    toko = st.text_input(
         "Nama Toko / Reseller",
         placeholder="Contoh: SBR2, Ajirasa1, Reseller",
     )
-    production = st.number_input(
+    produksi = st.number_input(
         "Jumlah Produksi / Titip", min_value=0, step=1
     )
-    sent = st.number_input("Jumlah Dikirim", min_value=0, step=1)
+    dikirim = st.number_input("Jumlah Dikirim", min_value=0, step=1)
     total_penjualan = st.number_input(
         "Total Penjualan (Rp)", min_value=0.0, step=1000.0, format="%.2f"
     )
@@ -106,11 +86,11 @@ elif menu == "➕ Input Penjualan":
     if submit_penjualan:
       try:
         data_baru = {
-            "date": str(tanggal),
-            "store": store,
-            "production": production,
-            "sent": sent,
-            "total_penjualan": total_penjualan,
+            "tanggal": str(tanggal),
+            "toko": toko,
+            "produksi": int(produksi),
+            "dikirim": int(dikirim),
+            "total_penjualan": float(total_penjualan),
         }
         supabase.table("tabel_penjualan").insert(data_baru).execute()
         st.success("✅ Data penjualan berhasil disimpan ke Supabase!")
@@ -127,7 +107,6 @@ elif menu == "💸 Input Pengeluaran":
         "Nama Barang / Bahan", placeholder="Contoh: Pisang, Minyak, Plastik"
     )
     qty = st.number_input("Kuantitas (Qty)", min_value=0.0, step=0.5)
-    satuan = st.text_input("Satuan", placeholder="Contoh: kg, pcs, liter, dus")
     pengeluaran = st.number_input(
         "Total Biaya Pengeluaran (Rp)", min_value=0.0, step=1000.0, format="%.2f"
     )
@@ -137,11 +116,10 @@ elif menu == "💸 Input Pengeluaran":
     if submit_pengeluaran:
       try:
         data_baru = {
-            "date": str(tanggal),
+            "tanggal": str(tanggal),
             "nama_barang": nama_barang,
-            "qty": qty,
-            "satuan": satuan,
-            "pengeluaran": pengeluaran,
+            "qty": float(qty),
+            "pengeluaran": float(pengeluaran),
         }
         supabase.table("tabel_pengeluaran").insert(data_baru).execute()
         st.success("✅ Data pengeluaran berhasil disimpan ke Supabase!")
