@@ -203,7 +203,7 @@ if menu == "📦 Produksi & Stok":
           st.error(f"❌ Gagal menghapus: {e}")
 
 # -----------------------------------------------------------------------------
-# MENU 2: KELOLA PENJUALAN
+# MENU 2: KELOLA PENJUALAN (RETUR DIHAPUS)
 # -----------------------------------------------------------------------------
 elif menu == "🛒 Kelola Penjualan":
   st.markdown("#### 🚨 Rekap Toko Belum Lunas (Kontrabon Aktif)")
@@ -273,14 +273,6 @@ elif menu == "🛒 Kelola Penjualan":
         dikirim = st.number_input(
             "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
         )
-        
-        retur_toko = st.number_input(
-            "Retur Dari Toko (Jika Ada)",
-            min_value=0,
-            step=1,
-            value=0,
-            key="tambah_retur",
-        )
 
         status_bayar = st.selectbox(
             "Status Pembayaran", ["Belum Lunas (Kontrabon)", "Lunas"], key="tambah_status"
@@ -302,7 +294,6 @@ elif menu == "🛒 Kelola Penjualan":
                 "toko": pilihan_toko_nama,
                 "produk": pilihan_produk_jual,
                 "dikirim": dikirim,
-                "sisa": retur_toko,
                 "status": status_bayar,
                 "total_penjualan": total_otomatis,
             }
@@ -364,7 +355,6 @@ elif menu == "🛒 Kelola Penjualan":
           current_toko = data_terpilih["toko"]
           current_produk = data_terpilih.get("produk", "Coklat")
           current_dikirim = data_terpilih["dikirim"]
-          current_sisa = data_terpilih.get("sisa", 0)
           current_status = data_terpilih.get("status", "Belum Lunas (Kontrabon)")
 
           st.markdown(f"**Edit / Pelunasan Data [ID: {current_id}]**")
@@ -410,13 +400,6 @@ elif menu == "🛒 Kelola Penjualan":
               step=1,
               value=int(current_dikirim),
               key=f"edit_dikirim_{current_id}",
-          )
-          new_sisa = st.number_input(
-              "Retur Dari Toko (Jika Ada)",
-              min_value=0,
-              step=1,
-              value=int(current_sisa),
-              key=f"edit_sisa_{current_id}",
           )
 
           idx_status = (
@@ -464,7 +447,6 @@ elif menu == "🛒 Kelola Penjualan":
                   "toko": new_toko,
                   "produk": new_produk,
                   "dikirim": new_dikirim,
-                  "sisa": new_sisa,
                   "status": new_status,
                   "total_penjualan": new_total,
               }
@@ -942,15 +924,10 @@ elif menu == "📈 Pantau Harga Bahan":
       df_bahan["qty"] = pd.to_numeric(df_bahan["qty"], errors="coerce").fillna(0)
       df_bahan["pengeluaran"] = pd.to_numeric(df_bahan["pengeluaran"], errors="coerce").fillna(0)
       
-      # Hitung harga satuan
       df_bahan["harga_satuan"] = df_bahan.apply(
           lambda row: row["pengeluaran"] / row["qty"] if row["qty"] > 0 else row["pengeluaran"], axis=1
       )
       
-      # Format tanggal agar rapi
-      df_bahan["tanggal_str"] = pd.to_datetime(df_bahan["tanggal"]).dt.strftime("%d %B %Y")
-
-      # Buat pivot table (Baris = Tanggal, Kolom = Nama Barang, Isi = Harga Satuan)
       df_pivot = df_bahan.pivot_table(
           index="tanggal",
           columns="nama_barang",
@@ -962,7 +939,6 @@ elif menu == "📈 Pantau Harga Bahan":
       df_pivot["tanggal"] = pd.to_datetime(df_pivot["tanggal"]).dt.strftime("%d %B %Y")
       df_pivot = df_pivot.rename(columns={"tanggal": "tanggal"})
 
-      # Format angka menjadi format Rupiah string agar mirip dengan contoh gambar
       df_display = df_pivot.copy()
       for col in df_display.columns:
         if col != "tanggal":
