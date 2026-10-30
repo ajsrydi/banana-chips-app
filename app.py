@@ -1,4 +1,5 @@
 import datetime
+import io
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -38,23 +39,24 @@ def init_connection():
 
 supabase = init_connection()
 
-# Header Utama (Subheader telah dihapus sesuai permintaan)
+# Header Utama (Subheader telah dihapus)
 st.title("🍌 Wanna Be With U")
 
 # -----------------------------------------------------------------------------
-# NAVIGASI SIDEBAR
+# NAVIGASI SIDEBAR (HOME DI POSISI PALING ATAS)
 # -----------------------------------------------------------------------------
 st.sidebar.markdown("### 📌 Navigasi Menu")
 
 menu = st.sidebar.selectbox(
     "Pilih Menu",
     [
+        "🏠 Home",
         "📦 Produksi & Stok",
         "🛒 Kelola Penjualan",
         "💸 Kelola Pengeluaran",
-        "📈 Dashboard Utama",
         "📊 Rekap Laporan & Stok",
         "📈 Pantau Harga Bahan",
+        "📥 Download Rekap Excel",
         "🏪 Kelola Master Toko",
     ],
 )
@@ -97,9 +99,126 @@ LIST_BARANG_PENGELUARAN = [
 ]
 
 # -----------------------------------------------------------------------------
-# MENU 1: PRODUKSI & STOK
+# MENU 1: HOME (EKS DASHBOARD UTAMA)
 # -----------------------------------------------------------------------------
-if menu == "📦 Produksi & Stok":
+if menu == "🏠 Home":
+  st.markdown("### 📈 Ringkasan Keuangan & Stok")
+
+  penjualan = fetch_data("tabel_penjualan")
+  pengeluaran = fetch_data("tabel_pengeluaran")
+  produksi = fetch_data("tabel_produksi")
+
+  total_omset = sum(item.get("total_penjualan", 0) for item in penjualan)
+  parse_piutang = sum(
+      item.get("total_penjualan", 0)
+      for item in penjualan
+      if "Belum" in str(item.get("status", ""))
+  )
+  total_biaya = sum(item.get("pengeluaran", 0) for item in pengeluaran)
+  
+  bulan_ini = str(datetime.date.today())[:7]
+  biaya_bulan_ini = sum(
+      item.get("pengeluaran", 0)
+      for item in pengeluaran
+      if str(item.get("tanggal", "")).startswith(bulan_ini)
+  )
+
+  total_profit = total_omset - total_biaya
+
+  total_prod_coklat = sum(
+      item.get("jumlah_produksi", 0)
+      for item in produksi
+      if item.get("produk", "Coklat") == "Coklat"
+  )
+  total_kirim_coklat = sum(
+      item.get("dikirim", 0)
+      for item in penjualan
+      if item.get("produk", "Coklat") == "Coklat"
+  )
+  stok_coklat = total_prod_coklat - total_kirim_coklat
+
+  total_prod_matcha = sum(
+      item.get("jumlah_produksi", 0)
+      for item in produksi
+      if item.get("produk") == "Matcha"
+  )
+  total_kirim_matcha = sum(
+      item.get("dikirim", 0)
+      for item in penjualan
+      if item.get("produk") == "Matcha"
+  )
+  stok_matcha = total_prod_matcha - total_kirim_matcha
+
+  if stok_coklat < 20 or stok_matcha < 20:
+    st.warning(
+        f"⚠️ **Peringatan Stok Menipis!** Stok Coklat: **{stok_coklat} pcs** | Stok Matcha: **{stok_matcha} pcs**. Segera jadwalkan produksi!"
+    )
+
+  col1, col2, col3 = st.columns(3)
+  col1.metric("Total Omset", f"Rp {total_omset:,.0f}")
+  col2.metric("Total Piutang (Kontrabon)", f"Rp {parse_piutang:,.0f}")
+  col3.metric("Estimasi Profit Bersih", f"Rp {total_profit:,.0f}")
+
+  col4, col5, col6 = st.columns(3)
+  col4.metric("Pengeluaran Bulan Ini", f"Rp {biaya_bulan_ini:,.0f}")
+  col5.metric("Stok Gudang Coklat", f"{stok_coklat:,} pcs")
+  col6.metric("Stok Gudang Matcha", f"{stok_matcha:,} pcs")
+
+  st.markdown("---")
+
+  st.markdown("#### 📊 Grafik Kinerja Keuangan Bulanan")
+  
+  df_p = pd.DataFrame(penjualan) if penjualan else pd.DataFrame()
+  df_e = pd.DataFrame(pengeluaran) if pengeluaran else pd.DataFrame()
+
+  if not df_p.empty or not df_e.empty:
+    if not df_p.empty:
+      df_p["bulan"] = pd.to_datetime(df_p["tanggal"]).dt.to_period("M").astype(str)
+      df_p_bulan = df_p.groupby("bulan")["total_penjualan"].sum().reset_index()
+    else:
+      df_p_bulan = pd.DataFrame(columns=["bulan", "total_penjualan"])
+
+    if not df_e.empty:
+      df_e["bulan"] = pd.to_datetime(df_e["tanggal"]).dt.to_period("M").astype(str)
+      df_exp_bulan = df_e.groupby("bulan")["pengeluaran"].sum().reset_index()
+    else:
+      df_exp_bulan = pd.DataFrame(columns=["bulan", "pengeluaran"])
+
+    df_chart_bulanan = pd.merge(df_p_bulan, df_exp_bulan, on="bulan", how="outer").fillna(0)
+    df_chart_bulanan = df_chart_bulanan.sort_values("bulan")
+    df_chart_bulanan["Profit Bersih"] = (
+        df_chart_bulanan["total_penjualan"] - df_chart_bulanan["pengeluaran"]
+    )
+
+    df_chart_melted = df_chart_bulanan.rename(columns={
+        "bulan": "Bulan",
+        "total_penjualan": "Pemasukan",
+        "pengeluaran": "Pengeluaran",
+        "Profit Bersih": "Profit Bersih"
+    }).melt(id_vars=["Bulan"], value_vars=["Pemasukan", "Pengeluaran", "Profit Bersih"], var_name="Kategori", value_name="Jumlah (Rp)")
+
+    fig = px.line(
+        df_chart_melted,
+        x="Bulan",
+        y="Jumlah (Rp)",
+        color="Kategori",
+        markers=True,
+        labels={"Bulan": "Bulan", "Jumlah (Rp)": "Nominal (Rp)"},
+    )
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        xaxis_title="",
+        yaxis_title="Nominal (Rp)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    st.plotly_chart(fig, use_container_width=True)
+  else:
+    st.info("Belum ada data transaksi untuk ditampilkan pada grafik bulanan.")
+
+# -----------------------------------------------------------------------------
+# MENU 2: PRODUKSI & STOK
+# -----------------------------------------------------------------------------
+elif menu == "📦 Produksi & Stok":
   st.markdown("### 📦 Kelola Produksi & Stok Gudang")
 
   produksi_list = fetch_data("tabel_produksi")
@@ -202,7 +321,7 @@ if menu == "📦 Produksi & Stok":
           st.error(f"❌ Gagal menghapus: {e}")
 
 # -----------------------------------------------------------------------------
-# MENU 2: KELOLA PENJUALAN
+# MENU 3: KELOLA PENJUALAN
 # -----------------------------------------------------------------------------
 elif menu == "🛒 Kelola Penjualan":
   st.markdown("#### 🚨 Rekap Toko Belum Lunas (Kontrabon Aktif)")
@@ -493,7 +612,7 @@ elif menu == "🛒 Kelola Penjualan":
       st.info("Belum ada data penjualan tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 3: KELOLA PENGELUARAN
+# MENU 4: KELOLA PENGELUARAN
 # -----------------------------------------------------------------------------
 elif menu == "💸 Kelola Pengeluaran":
   st.markdown("### 📝 Kelola Catatan Pengeluaran")
@@ -657,129 +776,6 @@ elif menu == "💸 Kelola Pengeluaran":
       st.dataframe(pengeluaran_list, use_container_width=True)
     else:
       st.info("Belum ada data pengeluaran tercatat.")
-
-# -----------------------------------------------------------------------------
-# MENU 4: DASHBOARD UTAMA
-# -----------------------------------------------------------------------------
-elif menu == "📈 Dashboard Utama":
-  st.markdown("### 📈 Ringkasan Keuangan & Stok")
-
-  penjualan = fetch_data("tabel_penjualan")
-  pengeluaran = fetch_data("tabel_pengeluaran")
-  produksi = fetch_data("tabel_produksi")
-
-  total_omset = sum(item.get("total_penjualan", 0) for item in penjualan)
-  parse_piutang = sum(
-      item.get("total_penjualan", 0)
-      for item in penjualan
-      if "Belum" in str(item.get("status", ""))
-  )
-  total_biaya = sum(item.get("pengeluaran", 0) for item in pengeluaran)
-  
-  # Pengeluaran bulan ini
-  bulan_ini = str(datetime.date.today())[:7]
-  biaya_bulan_ini = sum(
-      item.get("pengeluaran", 0)
-      for item in pengeluaran
-      if str(item.get("tanggal", "")).startswith(bulan_ini)
-  )
-
-  total_profit = total_omset - total_biaya
-
-  # Hitung Stok Gudang per Varian
-  total_prod_coklat = sum(
-      item.get("jumlah_produksi", 0)
-      for item in produksi
-      if item.get("produk", "Coklat") == "Coklat"
-  )
-  total_kirim_coklat = sum(
-      item.get("dikirim", 0)
-      for item in penjualan
-      if item.get("produk", "Coklat") == "Coklat"
-  )
-  stok_coklat = total_prod_coklat - total_kirim_coklat
-
-  total_prod_matcha = sum(
-      item.get("jumlah_produksi", 0)
-      for item in produksi
-      if item.get("produk") == "Matcha"
-  )
-  total_kirim_matcha = sum(
-      item.get("dikirim", 0)
-      for item in penjualan
-      if item.get("produk") == "Matcha"
-  )
-  stok_matcha = total_prod_matcha - total_kirim_matcha
-
-  # Peringatan Stok Menipis
-  if stok_coklat < 20 or stok_matcha < 20:
-    st.warning(
-        f"⚠️ **Peringatan Stok Menipis!** Stok Coklat: **{stok_coklat} pcs** | Stok Matcha: **{stok_matcha} pcs**. Segera jadwalkan produksi!"
-    )
-
-  # Kartu Metrik Baris 1
-  col1, col2, col3 = st.columns(3)
-  col1.metric("Total Omset", f"Rp {total_omset:,.0f}")
-  col2.metric("Total Piutang (Kontrabon)", f"Rp {parse_piutang:,.0f}")
-  col3.metric("Estimasi Profit Bersih", f"Rp {total_profit:,.0f}")
-
-  # Kartu Metrik Baris 2
-  col4, col5, col6 = st.columns(3)
-  col4.metric("Pengeluaran Bulan Ini", f"Rp {biaya_bulan_ini:,.0f}")
-  col5.metric("Stok Gudang Coklat", f"{stok_coklat:,} pcs")
-  col6.metric("Stok Gudang Matcha", f"{stok_matcha:,} pcs")
-
-  st.markdown("---")
-
-  # Grafik Bulanan (Pemasukan, Pengeluaran, dan Profit Bersih)
-  st.markdown("#### 📊 Grafik Kinerja Keuangan Bulanan")
-  
-  df_p = pd.DataFrame(penjualan) if penjualan else pd.DataFrame()
-  df_e = pd.DataFrame(pengeluaran) if pengeluaran else pd.DataFrame()
-
-  if not df_p.empty or not df_e.empty:
-    if not df_p.empty:
-      df_p["bulan"] = pd.to_datetime(df_p["tanggal"]).dt.to_period("M").astype(str)
-      df_p_bulan = df_p.groupby("bulan")["total_penjualan"].sum().reset_index()
-    else:
-      df_p_bulan = pd.DataFrame(columns=["bulan", "total_penjualan"])
-
-    if not df_e.empty:
-      df_e["bulan"] = pd.to_datetime(df_e["tanggal"]).dt.to_period("M").astype(str)
-      df_exp_bulan = df_e.groupby("bulan")["pengeluaran"].sum().reset_index()
-    else:
-      df_exp_bulan = pd.DataFrame(columns=["bulan", "pengeluaran"])
-
-    df_chart_bulanan = pd.merge(df_p_bulan, df_exp_bulan, on="bulan", how="outer").fillna(0)
-    df_chart_bulanan = df_chart_bulanan.sort_values("bulan")
-    df_chart_bulanan["Profit Bersih"] = (
-        df_chart_bulanan["total_penjualan"] - df_chart_bulanan["pengeluaran"]
-    )
-
-    df_chart_melted = df_chart_bulanan.rename(columns={
-        "bulan": "Bulan",
-        "total_penjualan": "Pemasukan",
-        "pengeluaran": "Pengeluaran",
-        "Profit Bersih": "Profit Bersih"
-    }).melt(id_vars=["Bulan"], value_vars=["Pemasukan", "Pengeluaran", "Profit Bersih"], var_name="Kategori", value_name="Jumlah (Rp)")
-
-    fig = px.line(
-        df_chart_melted,
-        x="Bulan",
-        y="Jumlah (Rp)",
-        color="Kategori",
-        markers=True,
-        labels={"Bulan": "Bulan", "Jumlah (Rp)": "Nominal (Rp)"},
-    )
-    fig.update_layout(
-        margin=dict(l=20, r=20, t=20, b=20),
-        xaxis_title="",
-        yaxis_title="Nominal (Rp)",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-    )
-    st.plotly_chart(fig, use_container_width=True)
-  else:
-    st.info("Belum ada data transaksi untuk ditampilkan pada grafik bulanan.")
 
 # -----------------------------------------------------------------------------
 # MENU 5: REKAP LAPORAN & STOK
@@ -948,7 +944,114 @@ elif menu == "📈 Pantau Harga Bahan":
       st.error("Struktur data pengeluaran tidak sesuai.")
 
 # -----------------------------------------------------------------------------
-# MENU 7: KELOLA MASTER TOKO
+# MENU 7: DOWNLOAD REKAP EXCEL (BARU)
+# -----------------------------------------------------------------------------
+elif menu == "📥 Download Rekap Excel":
+  st.markdown("### 📥 Download Rekap Excel")
+  st.markdown("Unduh laporan lengkap dalam format Excel yang rapi dengan pembagian 3 sheet: **Stok & Penjualan**, **Keuangan**, dan **Harga Bahan**.")
+
+  if st.button("📥 Unduh File Excel Sekarang", use_container_width=True):
+    penjualan = fetch_data("tabel_penjualan")
+    produksi = fetch_data("tabel_produksi")
+    pengeluaran = fetch_data("tabel_pengeluaran")
+
+    # Siapkan Data Sheet 1: Stok & Penjualan Bulanan
+    months = set()
+    if penjualan:
+      for item in penjualan:
+        if "tanggal" in item and item["tanggal"]:
+          months.add(str(item["tanggal"])[:7])
+    if produksi:
+      for item in produksi:
+        if "tanggal" in item and item["tanggal"]:
+          months.add(str(item["tanggal"])[:7])
+    months = sorted(list(months), reverse=True)
+
+    rekap_stok_data = []
+    for m in months:
+      prod_m = sum(item.get("jumlah_produksi", 0) for item in produksi if str(item.get("tanggal", "")).startswith(m))
+      terbuang_m = sum(item.get("sisa", 0) for item in penjualan if str(item.get("tanggal", "")).startswith(m))
+      sbr2_m = sum(item.get("dikirim", 0) for item in penjualan if str(item.get("tanggal", "")).startswith(m) and str(item.get("toko", "")).strip().lower() == "sbr2")
+      ajirasa3_m = sum(item.get("dikirim", 0) for item in penjualan if str(item.get("tanggal", "")).startswith(m) and str(item.get("toko", "")).strip().lower() == "ajirasa3")
+      ajirasa2_m = sum(item.get("dikirim", 0) for item in penjualan if str(item.get("tanggal", "")).startswith(m) and str(item.get("toko", "")).strip().lower() == "ajirasa2")
+      ajirasa1_m = sum(item.get("dikirim", 0) for item in penjualan if str(item.get("tanggal", "")).startswith(m) and str(item.get("toko", "")).strip().lower() == "ajirasa1")
+      reseller_m = sum(item.get("dikirim", 0) for item in penjualan if str(item.get("tanggal", "")).startswith(m) and ("reseller" in str(item.get("toko", "")).strip().lower() or str(item.get("toko", "")).strip().lower() not in ["sbr2", "ajirasa3", "ajirasa2", "ajirasa1"]))
+
+      rekap_stok_data.append({
+          "Bulan": m,
+          "Produksi": prod_m,
+          "Terbuang": terbuang_m,
+          "SBR2": sbr2_m,
+          "Ajirasa3": ajirasa3_m,
+          "Ajirasa2": ajirasa2_m,
+          "Ajirasa1": ajirasa1_m,
+          "Reseller": reseller_m,
+      })
+    df_sheet1 = pd.DataFrame(rekap_stok_data) if rekap_stok_data else pd.DataFrame(columns=["Bulan", "Produksi", "Terbuang", "SBR2", "Ajirasa3", "Ajirasa2", "Ajirasa1", "Reseller"])
+
+    # Siapkan Data Sheet 2: Keuangan
+    df_p = pd.DataFrame(penjualan) if penjualan else pd.DataFrame()
+    df_e = pd.DataFrame(pengeluaran) if pengeluaran else pd.DataFrame()
+    if not df_p.empty:
+      df_p["bulan"] = pd.to_datetime(df_p["tanggal"]).dt.to_period("M").astype(str)
+      df_p_b = df_p.groupby("bulan")["total_penjualan"].sum().reset_index()
+    else:
+      df_p_b = pd.DataFrame(columns=["bulan", "total_penjualan"])
+
+    if not df_e.empty:
+      df_e["bulan"] = pd.to_datetime(df_e["tanggal"]).dt.to_period("M").astype(str)
+      df_e_b = df_e.groupby("bulan")["pengeluaran"].sum().reset_index()
+    else:
+      df_e_b = pd.DataFrame(columns=["bulan", "pengeluaran"])
+
+    df_sheet2 = pd.merge(df_p_b, df_e_b, on="bulan", how="outer").fillna(0)
+    df_sheet2 = df_sheet2.sort_values(by="bulan", ascending=False)
+    df_sheet2["profit_bersih"] = df_sheet2["total_penjualan"] - df_sheet2["pengeluaran"]
+    df_sheet2 = df_sheet2.rename(columns={
+        "bulan": "Bulan",
+        "total_penjualan": "Total Omset (Rp)",
+        "pengeluaran": "Total Pengeluaran (Rp)",
+        "profit_bersih": "Profit Bersih (Rp)"
+    })
+
+    # Siapkan Data Sheet 3: Harga Bahan
+    if pengeluaran:
+      df_b = pd.DataFrame(pengeluaran)
+      df_b["qty"] = pd.to_numeric(df_b["qty"], errors="coerce").fillna(0)
+      df_b["pengeluaran"] = pd.to_numeric(df_b["pengeluaran"], errors="coerce").fillna(0)
+      df_b["harga_satuan"] = df_b.apply(lambda row: row["pengeluaran"] / row["qty"] if row["qty"] > 0 else row["pengeluaran"], axis=1)
+      
+      df_sheet3 = df_b.pivot_table(
+          index="tanggal",
+          columns="nama_barang",
+          values="harga_satuan",
+          aggfunc="mean"
+      ).reset_index()
+      df_sheet3 = df_sheet3.sort_values("tanggal", ascending=False)
+      df_sheet3["tanggal"] = pd.to_datetime(df_sheet3["tanggal"]).dt.strftime("%d %B %Y")
+      df_sheet3 = df_sheet3.rename(columns={"tanggal": "Tanggal"})
+    else:
+      df_sheet3 = pd.DataFrame(columns=["Tanggal"])
+
+    # Tulis ke file Excel in-memory menggunakan pandas & openpyxl
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+      df_sheet1.to_excel(writer, sheet_name="Stok dan Penjualan", index=False)
+      df_sheet2.to_excel(writer, sheet_name="Keuangan", index=False)
+      df_sheet3.to_excel(writer, sheet_name="Harga Bahan", index=False)
+    processed_data = output.getvalue()
+
+    st.download_button(
+        label="📥 Klik di Sini untuk Unduh File Excel",
+        data=processed_data,
+        file_name=f"Rekap_WannaBeWithU_{datetime.date.today()}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+    st.success("✅ File Excel berhasil disiapkan! Silakan klik tombol unduh di atas.")
+
+# -----------------------------------------------------------------------------
+# MENU 8: KELOLA MASTER TOKO
 # -----------------------------------------------------------------------------
 elif menu == "🏪 Kelola Master Toko":
   st.markdown("### 🏪 Master Data Toko & Harga")
