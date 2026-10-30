@@ -1,4 +1,5 @@
 import datetime
+import pandas as pd
 import streamlit as st
 from supabase import Client, create_client
 
@@ -140,12 +141,11 @@ if menu == "📊 Rekap & Dashboard":
     st.info("Belum ada data pengeluaran tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 2: KELOLA MASTER TOKO (BARU)
+# MENU 2: KELOLA MASTER TOKO (DENGAN KOLOM HARGA BERSIH)
 # -----------------------------------------------------------------------------
 elif menu == "🏪 Kelola Master Toko":
   st.markdown("### 🏪 Master Data Toko & Harga")
 
-  # Form Tambah/Update Toko
   with st.form("form_toko", clear_on_submit=True):
     nama_toko = st.text_input(
         "Nama Toko / Reseller", placeholder="Contoh: SBR2, Ajirasa1, AR 3"
@@ -173,7 +173,6 @@ elif menu == "🏪 Kelola Master Toko":
               "harga_jual": harga_jual,
               "potongan_persen": potongan_persen,
           }
-          # Upsert: Otomatis tambah baru atau update jika nama toko sudah ada
           supabase.table("tabel_toko").upsert(
               data_toko, on_conflict="nama_toko"
           ).execute()
@@ -186,7 +185,15 @@ elif menu == "🏪 Kelola Master Toko":
   st.markdown("#### 📋 Daftar Toko Terdaftar")
   list_toko = fetch_data("tabel_toko")
   if list_toko:
-    st.dataframe(list_toko, use_container_width=True)
+    # Buat DataFrame menggunakan Pandas untuk menambah kolom hitung otomatis
+    df_toko = pd.DataFrame(list_toko)
+
+    # Tambahkan kolom hitung: Harga Jual - Potongan (%)
+    df_toko["Harga Bersih per Pcs (Rp)"] = df_toko["harga_jual"] - (
+        df_toko["harga_jual"] * df_toko["potongan_persen"] / 100
+    )
+
+    st.dataframe(df_toko, use_container_width=True)
   else:
     st.info("Belum ada toko yang didaftarkan.")
 
@@ -204,17 +211,18 @@ elif menu == "➕ Input Penjualan":
         " Master Toko** terlebih dahulu!"
     )
   else:
-    # Buat pilihan dropdown dari daftar toko
     opsi_toko = {t["nama_toko"]: t for t in data_toko}
     pilihan_toko_nama = st.selectbox("Pilih Toko", list(opsi_toko.keys()))
     toko_terpilih = opsi_toko[pilihan_toko_nama]
 
-    # Tampilkan detail skema toko
     harga_jual = toko_terpilih.get("harga_jual", 0)
     potongan = toko_terpilih.get("potongan_persen", 0)
+    harga_bersih_pcs = harga_jual - (harga_jual * potongan / 100)
+
     st.info(
         f"💡 **Harga Jual:** Rp {harga_jual:,.0f} | **Potongan:**"
-        f" {potongan}%"
+        f" {potongan}% \n\n✨ **Harga Bersih per Pcs:** Rp"
+        f" {harga_bersih_pcs:,.0f}"
     )
 
     with st.form("form_penjualan", clear_on_submit=True):
@@ -222,9 +230,7 @@ elif menu == "➕ Input Penjualan":
       produksi = st.number_input("Jumlah Produksi / Titip", min_value=0, step=1)
       dikirim = st.number_input("Jumlah Dikirim / Laku", min_value=0, step=1)
 
-      # Hitung perkiraan omset kotor & bersih setelah potongan konsinyasi
-      omset_kotor = dikirim * harga_jual
-      omset_bersih = omset_kotor * (1 - (potongan / 100))
+      omset_bersih = dikirim * harga_bersih_pcs
 
       total_penjualan = st.number_input(
           "Total Penjualan Bersih (Rp)",
@@ -232,7 +238,7 @@ elif menu == "➕ Input Penjualan":
           min_value=0.0,
           step=1000.0,
           format="%.2f",
-          help="Otomatis dihitung berdasarkan (Dikirim × Harga Jual) - Potongan %",
+          help="Otomatis dihitung dari (Dikirim × Harga Bersih per Pcs)",
       )
 
       submit_penjualan = st.form_submit_button("💾 Simpan Data Penjualan")
