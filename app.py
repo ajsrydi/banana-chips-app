@@ -1,5 +1,6 @@
 import datetime
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 from supabase import Client, create_client
 
@@ -676,7 +677,7 @@ elif menu == "💸 Kelola Pengeluaran":
       st.info("Belum ada data pengeluaran tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 4: DASHBOARD UTAMA (UPGRADED)
+# MENU 4: DASHBOARD UTAMA (FIXED PLOTLY CHART)
 # -----------------------------------------------------------------------------
 elif menu == "📈 Dashboard Utama":
   st.markdown("### 📈 Ringkasan Keuangan & Stok")
@@ -748,14 +749,27 @@ elif menu == "📈 Dashboard Utama":
 
   st.markdown("---")
 
-  # Grafik Tren Omset Penjualan Harian
+  # Grafik Tren Omset Penjualan Harian Menggunakan Plotly (Aman di HP & Tidak Nyangkut)
   st.markdown("#### 📊 Grafik Tren Omset Harian")
   if penjualan:
     df_p_chart = pd.DataFrame(penjualan)
     if "tanggal" in df_p_chart.columns and "total_penjualan" in df_p_chart.columns:
       df_chart_grouped = df_p_chart.groupby("tanggal")["total_penjualan"].sum().reset_index()
-      df_chart_grouped = df_chart_grouped.set_index("tanggal")
-      st.line_chart(df_chart_grouped)
+      df_chart_grouped = df_chart_grouped.sort_values("tanggal")
+      
+      fig = px.line(
+          df_chart_grouped,
+          x="tanggal",
+          y="total_penjualan",
+          markers=True,
+          labels={"tanggal": "Tanggal", "total_penjualan": "Omset (Rp)"},
+      )
+      fig.update_layout(
+          margin=dict(l=20, r=20, t=20, b=20),
+          xaxis_title="",
+          yaxis_title="Omset (Rp)",
+      )
+      st.plotly_chart(fig, use_container_width=True)
   else:
     st.info("Belum ada data penjualan untuk ditampilkan pada grafik.")
 
