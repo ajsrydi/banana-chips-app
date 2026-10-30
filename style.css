@@ -62,7 +62,7 @@ h2, h3 {
 }
 
 .stButton button:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    background: linear-gradient(135deg, #1d4ed8 100%, #1e40af 100%);
     box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3);
     color: white;
 }
@@ -83,27 +83,19 @@ h2, h3 {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
 }
 
-/* Tabs Styling yang Bersih */
+/* Tabs Styling yang Normal & Jelas Terbaca */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
+    gap: 4px;
     background-color: #e2e8f0;
-    padding: 6px;
-    border-radius: 12px;
+    padding: 4px;
+    border-radius: 10px;
 }
 
 .stTabs [data-baseweb="tab"] {
-    background-color: transparent;
     border-radius: 8px;
-    padding: 8px 18px;
-    color: #64748b;
+    padding: 8px 16px;
+    color: #334155 !important;
     font-weight: 600;
-    border: none;
-    transition: all 0.2s ease;
-}
-
-.stTabs [data-baseweb="tab"]:hover {
-    color: #0f172a;
-    background-color: rgba(255, 255, 255, 0.5);
 }
 
 .stTabs [aria-selected="true"] {
