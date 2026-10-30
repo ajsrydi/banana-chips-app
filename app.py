@@ -7,8 +7,87 @@ st.set_page_config(
     page_title="Wanna Be With U - Laporan", page_icon="🍌", layout="centered"
 )
 
+# -----------------------------------------------------------------------------
+# CUSTOM CSS FOR STYLING
+# -----------------------------------------------------------------------------
+st.markdown(
+    """
+    <style>
+    /* Latar belakang utama & penyesuaian font */
+    .main {
+        background-color: #0f172a;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    /* Judul Utama */
+    h1 {
+        color: #facc15 !important;
+        font-weight: 800 !important;
+        text-align: center;
+        margin-bottom: 0px !important;
+    }
+    
+    /* Subtitle */
+    .stSubheader {
+        color: #cbd5e1 !important;
+        text-align: center;
+        font-size: 1.1rem !important;
+        margin-bottom: 1.5rem !important;
+    }
 
-# Inisialisasi koneksi Supabase menggunakan st.secrets
+    /* Container Kartu Metric / Summary */
+    div[data-testid="stMetricValue"] {
+        font-size: 1.5rem !important;
+        font-weight: bold !important;
+        color: #38bdf8 !important;
+    }
+
+    /* Kustomisasi Form & Input */
+    div[data-testid="stForm"] {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Tombol Submit */
+    div[data-testid="stForm"] button {
+        background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%) !important;
+        color: #000000 !important;
+        font-weight: bold !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 10px 20px !important;
+        width: 100% !important;
+        transition: transform 0.2s, opacity 0.2s;
+    }
+    div[data-testid="stForm"] button:active {
+        transform: scale(0.98);
+    }
+
+    /* Styling Tabel Dataframe */
+    div[data-testid="stDataFrame"] {
+        background-color: #1e293b;
+        border-radius: 12px;
+        padding: 8px;
+        border: 1px solid #334155;
+    }
+
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #0f172a !important;
+        border-right: 1px solid #334155;
+    }
+    </style>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# -----------------------------------------------------------------------------
+# SUPABASE CONNECTION
+# -----------------------------------------------------------------------------
 @st.cache_resource
 def init_connection():
   url = st.secrets["supabase"]["url"]
@@ -18,18 +97,17 @@ def init_connection():
 
 supabase = init_connection()
 
-# Judul Utama Aplikasi
+# Header Utama
 st.title("🍌 Wanna Be With U")
 st.subheader("Dashboard Laporan & Keuangan")
 
-# Menu Navigasi Samping (Sidebar)
+# Menu Navigasi Samping
 menu = st.sidebar.selectbox(
-    "Pilih Menu",
+    "📌 Pilih Menu",
     ["📊 Rekap & Dashboard", "➕ Input Penjualan", "💸 Input Pengeluaran"],
 )
 
 
-# Fungsi helper untuk mengambil data dari Supabase
 def fetch_data(table_name):
   try:
     response = supabase.table(table_name).select("*").execute()
@@ -39,33 +117,47 @@ def fetch_data(table_name):
     return []
 
 
-# --- MENU 1: REKAP & DASHBOARD ---
+# -----------------------------------------------------------------------------
+# MENU 1: REKAP & DASHBOARD
+# -----------------------------------------------------------------------------
 if menu == "📊 Rekap & Dashboard":
-  st.markdown("### Rekapitulasi Keuangan")
+  st.markdown("### 📈 Ringkasan Keuangan")
 
-  # Ambil data dari kedua tabel
   penjualan = fetch_data("tabel_penjualan")
   pengeluaran = fetch_data("tabel_pengeluaran")
 
-  # Tampilkan Tabel Penjualan
+  # Hitung Total
+  total_omset = sum(item.get("total_penjualan", 0) for item in penjualan)
+  total_biaya = sum(item.get("pengeluaran", 0) for item in pengeluaran)
+  total_profit = total_omset - total_biaya
+
+  # Tampilkan Ringkasan Kartu (Metrics)
+  col1, col2, col3 = st.columns(3)
+  col1.metric("Total Omset", f"Rp {total_omset:,.0f}")
+  col2.metric("Total Biaya", f"Rp {total_biaya:,.0f}")
+  col3.metric("Estimasi Profit", f"Rp {total_profit:,.0f}")
+
   st.markdown("---")
-  st.markdown("#### 📦 Tabel Penjualan")
+
+  # Tabel Penjualan
+  st.markdown("#### 📦 Data Penjualan")
   if penjualan:
     st.dataframe(penjualan, use_container_width=True)
   else:
     st.info("Belum ada data penjualan tercatat.")
 
-  # Tampilkan Tabel Pengeluaran
-  st.markdown("---")
-  st.markdown("#### 💸 Tabel Pengeluaran")
+  # Tabel Pengeluaran
+  st.markdown("#### 💸 Data Pengeluaran")
   if pengeluaran:
     st.dataframe(pengeluaran, use_container_width=True)
   else:
     st.info("Belum ada data pengeluaran tercatat.")
 
-# --- MENU 2: INPUT PENJUALAN ---
+# -----------------------------------------------------------------------------
+# MENU 2: INPUT PENJUALAN
+# -----------------------------------------------------------------------------
 elif menu == "➕ Input Penjualan":
-  st.markdown("### Tambah Catatan Penjualan")
+  st.markdown("### 📝 Input Penjualan Baru")
 
   with st.form("form_penjualan", clear_on_submit=True):
     tanggal = st.date_input("Tanggal", datetime.date.today())
@@ -81,25 +173,28 @@ elif menu == "➕ Input Penjualan":
         "Total Penjualan (Rp)", min_value=0.0, step=1000.0, format="%.2f"
     )
 
-    submit_penjualan = st.form_submit_button("Simpan Data Penjualan")
+    submit_penjualan = st.form_submit_button("💾 Simpan Data Penjualan")
 
     if submit_penjualan:
       try:
         data_baru = {
             "tanggal": str(tanggal),
             "toko": toko,
-            "produksi": int(produksi),
-            "dikirim": int(dikirim),
-            "total_penjualan": float(total_penjualan),
+            "produksi": produksi,
+            "dikirim": dikirim,
+            "total_penjualan": total_penjualan,
         }
         supabase.table("tabel_penjualan").insert(data_baru).execute()
-        st.success("✅ Data penjualan berhasil disimpan ke Supabase!")
+        st.success("✅ Data penjualan berhasil disimpan!")
+        st.rerun()
       except Exception as e:
         st.error(f"❌ Gagal menyimpan data: {e}")
 
-# --- MENU 3: INPUT PENGELUARAN ---
+# -----------------------------------------------------------------------------
+# MENU 3: INPUT PENGELUARAN
+# -----------------------------------------------------------------------------
 elif menu == "💸 Input Pengeluaran":
-  st.markdown("### Tambah Catatan Pengeluaran")
+  st.markdown("### 📝 Input Pengeluaran Baru")
 
   with st.form("form_pengeluaran", clear_on_submit=True):
     tanggal = st.date_input("Tanggal Pengeluaran", datetime.date.today())
@@ -111,17 +206,18 @@ elif menu == "💸 Input Pengeluaran":
         "Total Biaya Pengeluaran (Rp)", min_value=0.0, step=1000.0, format="%.2f"
     )
 
-    submit_pengeluaran = st.form_submit_button("Simpan Data Pengeluaran")
+    submit_pengeluaran = st.form_submit_button("💾 Simpan Data Pengeluaran")
 
     if submit_pengeluaran:
       try:
         data_baru = {
             "tanggal": str(tanggal),
             "nama_barang": nama_barang,
-            "qty": float(qty),
-            "pengeluaran": float(pengeluaran),
+            "qty": qty,
+            "pengeluaran": pengeluaran,
         }
         supabase.table("tabel_pengeluaran").insert(data_baru).execute()
-        st.success("✅ Data pengeluaran berhasil disimpan ke Supabase!")
+        st.success("✅ Data pengeluaran berhasil disimpan!")
+        st.rerun()
       except Exception as e:
         st.error(f"❌ Gagal menyimpan data: {e}")
