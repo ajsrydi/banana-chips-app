@@ -182,12 +182,36 @@ if menu == "📦 Produksi & Stok":
 elif menu == "🛒 Kelola Penjualan":
   st.markdown("### 📝 Kelola Catatan Penjualan & Kontrabon")
 
+  # --- REKAP GLOBAL DIPINDAHKAN KE PALING ATAS (SEBELUM TAB) ---
+  st.markdown("#### 🚨 Rekap Toko Belum Lunas (Kontrabon Aktif)")
+  penjualan_all = fetch_data("tabel_penjualan")
+  piutang_all = [
+      item
+      for item in penjualan_all
+      if "Belum" in str(item.get("status", ""))
+  ]
+
+  if piutang_all:
+    for item in piutang_all:
+      tgl_trx = item.get("tanggal", "-")
+      nm_toko = item.get("toko", "-")
+      prd_toko = item.get("produk", "Coklat")
+      jml_kirim = item.get("dikirim", 0)
+      tot_rp = item.get("total_penjualan", 0)
+      st.warning(
+          f"📅 `{tgl_trx}` | 🏪 **{nm_toko}** [{prd_toko}] ➡️ **{jml_kirim:,}"
+          f" pcs** (Rp {tot_rp:,.0f})"
+      )
+  else:
+    st.success("🎉 Mantap! Semua toko sudah lunas (tidak ada kontrabon aktif).")
+
+  st.markdown("---")
+
   tab1, tab2, tab3 = st.tabs(
       ["➕ Tambah Baru", "✏️ Edit / Pelunasan", "📦 Data Penjualan"]
   )
 
   data_toko = fetch_data("tabel_toko")
-  penjualan_all = fetch_data("tabel_penjualan")
 
   with tab1:
     if not data_toko:
@@ -196,30 +220,6 @@ elif menu == "🛒 Kelola Penjualan":
           " Master Toko** terlebih dahulu!"
       )
     else:
-      # --- REKAP GLOBAL DI ATAS DENGAN TANGGAL ---
-      st.markdown("#### 🚨 Rekap Toko Belum Lunas (Kontrabon Aktif)")
-      piutang_all = [
-          item
-          for item in penjualan_all
-          if "Belum" in str(item.get("status", ""))
-      ]
-
-      if piutang_all:
-        for item in piutang_all:
-          tgl_trx = item.get("tanggal", "-")
-          nm_toko = item.get("toko", "-")
-          prd_toko = item.get("produk", "Coklat")
-          jml_kirim = item.get("dikirim", 0)
-          tot_rp = item.get("total_penjualan", 0)
-          st.warning(
-              f"📅 `{tgl_trx}` | 🏪 **{nm_toko}** [{prd_toko}] ➡️ **{jml_kirim:,}"
-              f" pcs** (Rp {tot_rp:,.0f})"
-          )
-      else:
-        st.success("🎉 Mantap! Semua toko sudah lunas (tidak ada kontrabon aktif).")
-
-      st.markdown("---")
-
       tanggal = st.date_input("Tanggal", datetime.date.today(), key="tgl_jual")
       pilihan_produk_jual = st.selectbox(
           "Pilih Varian Produk", LIST_PRODUK, key="jual_prod"
