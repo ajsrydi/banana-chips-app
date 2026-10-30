@@ -177,7 +177,7 @@ if menu == "📦 Produksi & Stok":
           st.error(f"❌ Gagal menghapus: {e}")
 
 # -----------------------------------------------------------------------------
-# MENU 2: KELOLA PENJUALAN (DENGAN STATUS KONTRABON & SISA)
+# MENU 2: KELOLA PENJUALAN
 # -----------------------------------------------------------------------------
 elif menu == "🛒 Kelola Penjualan":
   st.markdown("### 📝 Kelola Catatan Penjualan & Kontrabon")
@@ -187,6 +187,7 @@ elif menu == "🛒 Kelola Penjualan":
   )
 
   data_toko = fetch_data("tabel_toko")
+  penjualan_all = fetch_data("tabel_penjualan")
 
   with tab1:
     if not data_toko:
@@ -214,8 +215,28 @@ elif menu == "🛒 Kelola Penjualan":
         pilihan_toko_nama = st.selectbox(
             "Pilih Toko", list(opsi_toko.keys()), key="tambah_toko"
         )
-        toko_terpilih = opsi_toko[pilihan_toko_nama]
+        
+        # --- HITUNG JUMLAH BELUM DIBAYAR (KONTRABON) UNTUK TOKO INI & VARIAN INI ---
+        piutang_toko_pcs = sum(
+            item.get("dikirim", 0)
+            for item in penjualan_all
+            if item.get("toko") == pilihan_toko_nama
+            and item.get("produk", "Coklat") == pilihan_produk_jual
+            and "Belum" in str(item.get("status", ""))
+        )
 
+        # Menampilkan info piutang/belum bayar toko tersebut
+        if piutang_toko_pcs > 0:
+          st.warning(
+              f"⚠️ **Info Kontrabon:** Toko **{pilihan_toko_nama}** ({pilihan_produk_jual}) "
+              f"masih memiliki tanggungan belum dibayar sebanyak **{piutang_toko_pcs:,} pcs**."
+          )
+        else:
+          st.success(
+              f"✅ Toko **{pilihan_toko_nama}** ({pilihan_produk_jual}) lunas / tidak ada tanggungan aktif."
+          )
+
+        toko_terpilih = opsi_toko[pilihan_toko_nama]
         harga_jual = toko_terpilih.get("harga_jual", 0)
         potongan = toko_terpilih.get("potongan_persen", 0)
         harga_bersih_pcs = harga_jual - (harga_jual * potongan / 100)
@@ -223,12 +244,14 @@ elif menu == "🛒 Kelola Penjualan":
         dikirim = st.number_input(
             "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
         )
-        sisa_titipan = st.number_input(
-            "Sisa Stok / Retur di Toko (Opsional)",
+        
+        # Nama input diganti menjadi Retur Dari Toko (Opsional)
+        retur_toko = st.number_input(
+            "Retur Dari Toko (Opsional)",
             min_value=0,
             step=1,
             value=0,
-            key="tambah_sisa",
+            key="tambah_retur",
         )
 
         status_bayar = st.selectbox(
@@ -251,7 +274,7 @@ elif menu == "🛒 Kelola Penjualan":
                 "toko": pilihan_toko_nama,
                 "produk": pilihan_produk_jual,
                 "dikirim": dikirim,
-                "sisa": sisa_titipan,
+                "sisa": retur_toko,  # Disimpan ke kolom sisa di database
                 "status": status_bayar,
                 "total_penjualan": total_otomatis,
             }
@@ -361,7 +384,7 @@ elif menu == "🛒 Kelola Penjualan":
               key=f"edit_dikirim_{current_id}",
           )
           new_sisa = st.number_input(
-              "Sisa Stok / Retur di Toko",
+              "Retur Dari Toko (Opsional)",
               min_value=0,
               step=1,
               value=int(current_sisa),
@@ -447,7 +470,6 @@ elif menu == "🛒 Kelola Penjualan":
       if "produksi" in df_penjualan.columns:
         df_penjualan = df_penjualan.drop(columns=["produksi"])
       
-      # Fungsi styling untuk memberi warna pada baris yang belum lunas
       def highlight_status(row):
         status = row.get("status", "Belum Lunas (Kontrabon)")
         if "Belum" in str(status):
