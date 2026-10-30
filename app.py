@@ -72,7 +72,7 @@ def fetch_data(table_name):
 LIST_PRODUK = ["Coklat", "Matcha"]
 
 # -----------------------------------------------------------------------------
-# MENU 1: PRODUKSI & STOK (Tanpa Keterangan / Batch)
+# MENU 1: PRODUKSI & STOK
 # -----------------------------------------------------------------------------
 if menu == "📦 Produksi & Stok":
   st.markdown("### 📦 Kelola Produksi & Stok Gudang")
@@ -224,31 +224,29 @@ elif menu == "🛒 Kelola Penjualan":
             f" Bersih per Pcs:** Rp {harga_bersih_pcs:,.0f}"
         )
 
-        with st.form("form_penjualan_baru", clear_on_submit=True):
-          tanggal = st.date_input("Tanggal", datetime.date.today())
-          dikirim = st.number_input(
-              "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
-          )
+        # Input di luar form agar total langsung terhitung secara real-time saat diubah
+        tanggal = st.date_input("Tanggal", datetime.date.today(), key="tgl_jual")
+        dikirim = st.number_input(
+            "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
+        )
 
-          total_otomatis = dikirim * harga_bersih_pcs
-          st.markdown(f"💰 **Total Penjualan:** Rp {total_otomatis:,.0f}")
+        total_otomatis = dikirim * harga_bersih_pcs
+        st.markdown(f"💰 **Total Penjualan:** Rp {total_otomatis:,.0f}")
 
-          submit_penjualan = st.form_submit_button("💾 Simpan Data Penjualan")
-
-          if submit_penjualan:
-            try:
-              data_baru = {
-                  "tanggal": str(tanggal),
-                  "toko": pilihan_toko_nama,
-                  "produk": pilihan_produk_jual,
-                  "dikirim": dikirim,
-                  "total_penjualan": total_otomatis,
-              }
-              supabase.table("tabel_penjualan").insert(data_baru).execute()
-              st.success("✅ Data penjualan berhasil disimpan!")
-              st.rerun()
-            except Exception as e:
-              st.error(f"❌ Gagal menyimpan data: {e}")
+        if st.button("💾 Simpan Data Penjualan", use_container_width=True):
+          try:
+            data_baru = {
+                "tanggal": str(tanggal),
+                "toko": pilihan_toko_nama,
+                "produk": pilihan_produk_jual,
+                "dikirim": dikirim,
+                "total_penjualan": total_otomatis,
+            }
+            supabase.table("tabel_penjualan").insert(data_baru).execute()
+            st.success("✅ Data penjualan berhasil disimpan!")
+            st.rerun()
+          except Exception as e:
+            st.error(f"❌ Gagal menyimpan data: {e}")
 
   with tab2:
     penjualan_list = fetch_data("tabel_penjualan")
@@ -469,7 +467,7 @@ elif menu == "📈 Dashboard Utama":
   col4, col5, col6 = st.columns(3)
   col4.metric("Total Produksi", f"{total_prod_qty:,} pcs")
   col5.metric("Total Terkirim", f"{total_kirim_qty:,} pcs")
-  col6.metric("Sisa Stok Gudang", f"{sisa_stok:,} pcs")
+  col6.metric("Stok Gudang", f"{sisa_stok:,} pcs")
 
   st.markdown("---")
   st.info(
