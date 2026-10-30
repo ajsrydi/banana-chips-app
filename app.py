@@ -614,13 +614,18 @@ elif menu == "📊 Rekap Harian, Bulanan, Tahunan":
       st.info("Belum ada data transaksi untuk rekap tahunan.")
 
 # -----------------------------------------------------------------------------
-# MENU 6: KELOLA MASTER TOKO (DENGAN INPUT KENAIKAN HARGA)
+# MENU 6: KELOLA MASTER TOKO (DENGAN TAB TERPISAH COKLAT & MATCHA)
 # -----------------------------------------------------------------------------
 elif menu == "🏪 Kelola Master Toko":
   st.markdown("### 🏪 Master Data Toko & Harga")
 
-  tab1, tab2, tab3 = st.tabs(
-      ["➕ Tambah / Edit Toko", "📈 Adjust Kenaikan Harga", "📋 Daftar Toko"]
+  tab1, tab2, tab3, tab4 = st.tabs(
+      [
+          "➕ Tambah / Edit Toko",
+          "🍫 Adjust Harga Coklat",
+          "🍵 Adjust Harga Matcha",
+          "📋 Daftar Toko",
+      ]
   )
 
   list_toko = fetch_data("tabel_toko")
@@ -659,98 +664,196 @@ elif menu == "🏪 Kelola Master Toko":
                 data_toko, on_conflict="nama_toko,produk"
             ).execute()
             st.success(
-                f"✅ Data toko '{nama_toko}' untuk produk"
-                f" '{pilih_produk_toko}' berhasil disimpan!"
+                f"✅ Data toko '{nama_toko}' untuk produk '{pilih_produk_toko}'"
+                " berhasil disimpan!"
             )
             st.rerun()
           except Exception as e:
             st.error(f"❌ Gagal menyimpan toko: {e}")
 
+  # -------------------------------------------------------------------------
+  # TAB 2: ADJUST HARGA KHUSUS COKLAT
+  # -------------------------------------------------------------------------
   with tab2:
-    st.markdown("#### 📈 Penyesuaian Kenaikan Harga")
-    if not list_toko:
-      st.info("Belum ada data toko terdaftar.")
+    st.markdown("#### 🍫 Penyesuaian Harga - Varian Coklat")
+    toko_coklat = [
+        t for t in list_toko if t.get("produk", "Coklat") == "Coklat"
+    ]
+
+    if not toko_coklat:
+      st.info("Belum ada data toko terdaftar untuk varian Coklat.")
     else:
-      mode_adjust = st.radio(
-          "Pilih Skop Kenaikan Harga",
-          ["Satu Toko Spesifik", "Massal per Varian Produk"],
+      mode_coklat = st.radio(
+          "Pilih Skala Kenaikan Harga (Coklat)",
+          ["Satu Toko Spesifik", "Massal Semua Toko (Coklat)"],
+          key="radio_coklat",
       )
 
-      if mode_adjust == "Satu Toko Spesifik":
-        opsi_toko_adj = {
-            f"{t['nama_toko']} [{t.get('produk', 'Coklat')}] (Harga Lama: Rp {t.get('harga_jual', 0):,.0f})"
+      if mode_coklat == "Satu Toko Spesifik":
+        opsi_coklat = {
+            f"{t['nama_toko']} (Harga Lama: Rp {t.get('harga_jual', 0):,.0f})"
             : t
-            for t in list_toko
+            for t in toko_coklat
         }
-        pilih_toko_adj = st.selectbox(
-            "Pilih Toko & Produk", list(opsi_toko_adj.keys())
+        pilih_c = st.selectbox(
+            "Pilih Toko Coklat", list(opsi_coklat.keys()), key="sel_c"
         )
-        obj_toko = opsi_toko_adj[pilih_toko_adj]
+        obj_c = opsi_coklat[pilih_c]
 
-        harga_lama = obj_toko.get("harga_jual", 0)
-        nominal_kenaikan = st.number_input(
+        h_lama_c = obj_c.get("harga_jual", 0)
+        nominal_c = st.number_input(
             "Nominal Kenaikan Harga (Rp)",
             min_value=0.0,
             step=500.0,
             value=1000.0,
             format="%.2f",
+            key="nom_c",
         )
 
-        harga_baru = harga_lama + nominal_kenaikan
+        h_baru_c = h_lama_c + nominal_c
         st.info(
-            f"💡 **Harga Lama:** Rp {harga_lama:,.0f} ➡️ **Harga Baru:** Rp"
-            f" {harga_baru:,.0f}"
+            f"💡 **Harga Lama:** Rp {h_lama_c:,.0f} ➡️ **Harga Baru:** Rp"
+            f" {h_baru_c:,.0f}"
         )
 
-        if st.button("🚀 Terapkan Kenaikan Harga", use_container_width=True):
+        if st.button(
+            "🚀 Terapkan Kenaikan Harga Coklat",
+            key="btn_c",
+            use_container_width=True,
+        ):
           try:
-            supabase.table("tabel_toko").update(
-                {"harga_jual": harga_baru}
-            ).eq("id", obj_toko["id"]).execute()
+            supabase.table("tabel_toko").update({"harga_jual": h_baru_c}).eq(
+                "id", obj_c["id"]
+            ).execute()
             st.success(
-                f"✅ Harga jual {obj_toko['nama_toko']} [{obj_toko.get('produk')}]"
-                f" berhasil dinaikkan menjadi Rp {harga_baru:,.0f}!"
+                f"✅ Harga Coklat {obj_c['nama_toko']} berhasil dinaikkan"
+                f" menjadi Rp {h_baru_c:,.0f}!"
             )
             st.rerun()
           except Exception as e:
             st.error(f"❌ Gagal memperbarui harga: {e}")
 
       else:
-        produk_massal = st.selectbox("Pilih Varian Produk", LIST_PRODUK)
-        nominal_kenaikan_massal = st.number_input(
-            "Nominal Kenaikan Harga untuk Semua Toko (Rp)",
+        nominal_massal_c = st.number_input(
+            "Nominal Kenaikan untuk Semua Toko Coklat (Rp)",
             min_value=0.0,
             step=500.0,
             value=1000.0,
             format="%.2f",
-            key="kenaikan_massal",
+            key="nom_massal_c",
         )
-
-        toko_produk_terkait = [
-            t for t in list_toko if t.get("produk", "Coklat") == produk_massal
-        ]
         st.warning(
-            f"⚠️ Kenaikan harga Rp {nominal_kenaikan_massal:,.0f} akan"
-            f" diterapkan ke **{len(toko_produk_terkait)} toko** untuk varian"
-            f" **{produk_massal}**."
+            f"⚠️ Kenaikan Rp {nominal_massal_c:,.0f} akan diterapkan ke"
+            f" **{len(toko_coklat)} toko** untuk varian Coklat."
         )
 
-        if st.button("🚀 Terapkan Kenaikan Massal", use_container_width=True):
+        if st.button(
+            "🚀 Terapkan Kenaikan Massal Coklat",
+            key="btn_massal_c",
+            use_container_width=True,
+        ):
           try:
-            for t in toko_produk_terkait:
-              h_baru = t.get("harga_jual", 0) + nominal_kenaikan_massal
+            for t in toko_coklat:
+              h_baru = t.get("harga_jual", 0) + nominal_massal_c
               supabase.table("tabel_toko").update({"harga_jual": h_baru}).eq(
                   "id", t["id"]
               ).execute()
-            st.success(
-                f"✅ Kenaikan harga berhasil diterapkan ke semua toko untuk"
-                f" varian {produk_massal}!"
-            )
+            st.success("✅ Kenaikan harga massal Coklat berhasil diterapkan!")
             st.rerun()
           except Exception as e:
             st.error(f"❌ Gagal memperbarui harga massal: {e}")
 
+  # -------------------------------------------------------------------------
+  # TAB 3: ADJUST HARGA KHUSUS MATCHA
+  # -------------------------------------------------------------------------
   with tab3:
+    st.markdown("#### 🍵 Penyesuaian Harga - Varian Matcha")
+    toko_matcha = [t for t in list_toko if t.get("produk") == "Matcha"]
+
+    if not toko_matcha:
+      st.info("Belum ada data toko terdaftar untuk varian Matcha.")
+    else:
+      mode_matcha = st.radio(
+          "Pilih Skala Kenaikan Harga (Matcha)",
+          ["Satu Toko Spesifik", "Massal Semua Toko (Matcha)"],
+          key="radio_matcha",
+      )
+
+      if mode_matcha == "Satu Toko Spesifik":
+        opsi_matcha = {
+            f"{t['nama_toko']} (Harga Lama: Rp {t.get('harga_jual', 0):,.0f})"
+            : t
+            for t in toko_matcha
+        }
+        pilih_m = st.selectbox(
+            "Pilih Toko Matcha", list(opsi_matcha.keys()), key="sel_m"
+        )
+        obj_m = opsi_matcha[pilih_m]
+
+        h_lama_m = obj_m.get("harga_jual", 0)
+        nominal_m = st.number_input(
+            "Nominal Kenaikan Harga (Rp)",
+            min_value=0.0,
+            step=500.0,
+            value=1000.0,
+            format="%.2f",
+            key="nom_m",
+        )
+
+        h_baru_m = h_lama_m + nominal_m
+        st.info(
+            f"💡 **Harga Lama:** Rp {h_lama_m:,.0f} ➡️ **Harga Baru:** Rp"
+            f" {h_baru_m:,.0f}"
+        )
+
+        if st.button(
+            "🚀 Terapkan Kenaikan Harga Matcha",
+            key="btn_m",
+            use_container_width=True,
+        ):
+          try:
+            supabase.table("tabel_toko").update({"harga_jual": h_baru_m}).eq(
+                "id", obj_m["id"]
+            ).execute()
+            st.success(
+                f"✅ Harga Matcha {obj_m['nama_toko']} berhasil dinaikkan"
+                f" menjadi Rp {h_baru_m:,.0f}!"
+            )
+            st.rerun()
+          except Exception as e:
+            st.error(f"❌ Gagal memperbarui harga: {e}")
+
+      else:
+        nominal_massal_m = st.number_input(
+            "Nominal Kenaikan untuk Semua Toko Matcha (Rp)",
+            min_value=0.0,
+            step=500.0,
+            value=1000.0,
+            format="%.2f",
+            key="nom_massal_m",
+        )
+        st.warning(
+            f"⚠️ Kenaikan Rp {nominal_massal_m:,.0f} akan diterapkan ke"
+            f" **{len(toko_matcha)} toko** untuk varian Matcha."
+        )
+
+        if st.button(
+            "🚀 Terapkan Kenaikan Massal Matcha",
+            key="btn_massal_m",
+            use_container_width=True,
+        ):
+          try:
+            for t in toko_matcha:
+              h_baru = t.get("harga_jual", 0) + nominal_massal_m
+              supabase.table("tabel_toko").update({"harga_jual": h_baru}).eq(
+                  "id", t["id"]
+              ).execute()
+            st.success("✅ Kenaikan harga massal Matcha berhasil diterapkan!")
+            st.rerun()
+          except Exception as e:
+            st.error(f"❌ Gagal memperbarui harga massal: {e}")
+
+  with tab4:
     st.markdown("#### 📋 Daftar Toko Terdaftar")
     if list_toko:
       df_toko = pd.DataFrame(list_toko)
