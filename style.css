@@ -1,23 +1,23 @@
 /* =========================================================
-   WANNA BE WITH U — Flat Professional UI
-   Light & Dark mode compatible
+   WANNA BE WITH U — Soft Flat UI
+   Mengikuti Light & Dark Mode bawaan Streamlit
    ========================================================= */
 
 :root {
-  /* Flat brand palette */
-  --brand: #2563eb;
-  --brand-hover: #1d4ed8;
-  --brand-soft: rgba(37, 99, 235, 0.10);
+  /* Soft flat accent */
+  --accent: #7c9cd1;
+  --accent-hover: #6a8bc0;
+  --accent-soft: rgba(124, 156, 209, 0.14);
 
-  --success: #16a34a;
-  --warning: #d97706;
-  --danger: #dc2626;
+  --positive: #7fb69a;
+  --warning: #d9b26a;
+  --negative: #d98a8a;
 
-  --radius-lg: 14px;
-  --radius-md: 10px;
-  --radius-sm: 6px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
 
-  --transition: 140ms ease;
+  --transition: 150ms ease;
 }
 
 /* ---------------------------------------------------------
@@ -30,9 +30,9 @@
 }
 
 .block-container {
-  max-width: 1140px;
+  max-width: 1120px;
   padding-top: 1.75rem;
-  padding-bottom: 3.5rem;
+  padding-bottom: 3.25rem;
 }
 
 header[data-testid="stHeader"] {
@@ -59,21 +59,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-  font-size: clamp(1.55rem, 3vw, 2rem) !important;
+  font-size: clamp(1.5rem, 3vw, 1.95rem) !important;
   margin-bottom: 0.2rem !important;
 }
 
 h2 {
-  font-size: clamp(1.2rem, 2.2vw, 1.45rem) !important;
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem) !important;
 }
 
 h3 {
-  font-size: clamp(1rem, 1.8vw, 1.15rem) !important;
+  font-size: clamp(1rem, 1.8vw, 1.12rem) !important;
 }
 
 h4 {
-  font-size: 0.98rem !important;
-  opacity: 0.9;
+  font-size: 0.96rem !important;
+  opacity: 0.88;
 }
 
 p, span, label {
@@ -85,7 +85,7 @@ p, span, label {
    --------------------------------------------------------- */
 
 section[data-testid="stSidebar"] {
-  border-right: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
+  border-right: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
 }
 
 section[data-testid="stSidebar"] .block-container {
@@ -93,24 +93,25 @@ section[data-testid="stSidebar"] .block-container {
 }
 
 section[data-testid="stSidebar"] h3 {
-  font-size: 0.72rem !important;
+  font-size: 0.7rem !important;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  opacity: 0.55;
+  opacity: 0.5;
   margin-bottom: 0.9rem !important;
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
   border-radius: var(--radius-md);
-  border-color: var(--border-color, rgba(128, 128, 128, 0.28));
+  border-color: var(--border-color, rgba(128, 128, 128, 0.24));
   min-height: 44px;
   font-weight: 600;
   background: transparent;
+  transition: border-color var(--transition);
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
-  border-color: var(--brand);
+  border-color: var(--accent);
 }
 
 /* ---------------------------------------------------------
@@ -119,33 +120,33 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
 
 [data-testid="stMetric"] {
   background: var(--secondary-background-color, transparent);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
   border-radius: var(--radius-lg);
   padding: 18px 20px;
   transition: border-color var(--transition), background var(--transition);
 }
 
 [data-testid="stMetric"]:hover {
-  border-color: var(--brand);
-  background: var(--brand-soft);
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 [data-testid="stMetricLabel"] {
-  font-size: 0.76rem !important;
+  font-size: 0.74rem !important;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  opacity: 0.65;
+  opacity: 0.6;
 }
 
 [data-testid="stMetricValue"] {
-  font-size: clamp(1.2rem, 2.3vw, 1.55rem) !important;
+  font-size: clamp(1.18rem, 2.3vw, 1.5rem) !important;
   font-weight: 800 !important;
   letter-spacing: -0.03em;
 }
 
 [data-testid="stMetricDelta"] {
-  font-size: 0.78rem !important;
+  font-size: 0.76rem !important;
   font-weight: 600;
 }
 
@@ -157,27 +158,27 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
   background: var(--secondary-background-color, transparent);
 }
 
 .stTabs [data-baseweb="tab"] {
   border-radius: var(--radius-md);
   padding: 9px 14px;
-  font-size: 0.86rem;
+  font-size: 0.85rem;
   font-weight: 650;
   color: var(--text-color, inherit);
-  opacity: 0.62;
+  opacity: 0.6;
   transition: background var(--transition), opacity var(--transition);
 }
 
 .stTabs [data-baseweb="tab"]:hover {
-  opacity: 0.9;
-  background: var(--brand-soft);
+  opacity: 0.88;
+  background: var(--accent-soft);
 }
 
 .stTabs [aria-selected="true"] {
-  background: var(--brand);
+  background: var(--accent);
   color: #ffffff !important;
   opacity: 1;
 }
@@ -192,7 +193,7 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
 
 [data-testid="stForm"] {
   background: var(--secondary-background-color, transparent);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
   border-radius: var(--radius-lg);
   padding: 20px;
 }
@@ -203,7 +204,7 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
 div[data-baseweb="select"] > div,
 div[data-baseweb="base-input"] {
   border-radius: var(--radius-md) !important;
-  border-color: var(--border-color, rgba(128, 128, 128, 0.28)) !important;
+  border-color: var(--border-color, rgba(128, 128, 128, 0.24)) !important;
   min-height: 42px;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
@@ -212,14 +213,14 @@ div[data-baseweb="base-input"] {
 .stNumberInput input:focus,
 .stDateInput input:focus,
 div[data-baseweb="select"] > div:focus-within {
-  border-color: var(--brand) !important;
-  box-shadow: 0 0 0 3px var(--brand-soft) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
 }
 
 label {
   font-weight: 600 !important;
-  font-size: 0.84rem !important;
-  opacity: 0.85;
+  font-size: 0.83rem !important;
+  opacity: 0.82;
 }
 
 /* ---------------------------------------------------------
@@ -240,26 +241,26 @@ label {
 /* Primary */
 .stButton > button[kind="primary"],
 .stFormSubmitButton > button {
-  background: var(--brand);
+  background: var(--accent);
   color: #ffffff;
 }
 
 .stButton > button[kind="primary"]:hover,
 .stFormSubmitButton > button:hover {
-  background: var(--brand-hover);
+  background: var(--accent-hover);
 }
 
 /* Secondary */
 .stButton > button[kind="secondary"] {
   background: transparent;
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.28));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.24));
   color: var(--text-color, inherit);
 }
 
 .stButton > button[kind="secondary"]:hover {
-  border-color: var(--brand);
-  color: var(--brand);
-  background: var(--brand-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 /* ---------------------------------------------------------
@@ -268,7 +269,7 @@ label {
 
 [data-testid="stAlert"] {
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
   font-size: 0.9rem;
 }
 
@@ -277,21 +278,21 @@ label {
    --------------------------------------------------------- */
 
 [data-testid="stDataFrame"] {
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
 [data-testid="stDataFrame"] [role="columnheader"] {
   font-weight: 700 !important;
-  font-size: 0.78rem !important;
+  font-size: 0.76rem !important;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 [data-testid="stPlotlyChart"] {
   background: var(--secondary-background-color, transparent);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
   border-radius: var(--radius-lg);
   padding: 12px;
 }
@@ -302,7 +303,7 @@ label {
 
 div[role="radiogroup"] label,
 div[data-testid="stCheckbox"] label {
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.22));
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
   border-radius: var(--radius-md);
   padding: 10px 14px;
   transition: border-color var(--transition), background var(--transition);
@@ -310,8 +311,8 @@ div[data-testid="stCheckbox"] label {
 
 div[role="radiogroup"] label:hover,
 div[data-testid="stCheckbox"] label:hover {
-  border-color: var(--brand);
-  background: var(--brand-soft);
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 /* ---------------------------------------------------------
@@ -329,7 +330,7 @@ div[data-testid="stCheckbox"] label:hover {
   }
 
   [data-testid="stMetricValue"] {
-    font-size: 1.2rem !important;
+    font-size: 1.18rem !important;
   }
 
   .stButton > button,
@@ -339,7 +340,7 @@ div[data-testid="stCheckbox"] label:hover {
 
   .stTabs [data-baseweb="tab"] {
     padding: 8px 10px;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
   }
 
   [data-testid="stForm"] {
