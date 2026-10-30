@@ -1,0 +1,125 @@
+/* Konfigurasi Global & Font */
+.stApp {
+    background-color: #f4f6f9;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+}
+
+/* Header Utama */
+h1 {
+    color: #0f172a;
+    font-weight: 800;
+    font-size: 1.75rem !important;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.5rem;
+}
+
+h2, h3 {
+    color: #1e293b;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+/* Kartu Metrik (Metric Cards) Modern & Elegan */
+[data-testid="stMetric"] {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 0.85rem !important;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+[data-testid="stMetricValue"] {
+    font-size: 1.4rem !important;
+    color: #0f172a;
+    font-weight: 800;
+}
+
+/* Tombol Utama (Buttons) */
+.stButton button {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s ease;
+}
+
+.stButton button:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3);
+    color: white;
+}
+
+/* Sidebar Styling */
+[data-testid="stSidebar"] {
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.01);
+}
+
+/* Tabel Data (Dataframes) */
+[data-testid="stDataFrame"] {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* Tabs Styling yang Bersih */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background-color: #e2e8f0;
+    padding: 6px;
+    border-radius: 12px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background-color: transparent;
+    border-radius: 8px;
+    padding: 8px 18px;
+    color: #64748b;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    color: #0f172a;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #ffffff !important;
+    color: #2563eb !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Input Fields & Forms */
+.stTextInput input, .stNumberInput input, .stSelectbox select, .stDateInput input {
+    border-radius: 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 0.5rem !important;
+}
+
+.stTextInput input:focus, .stNumberInput input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
