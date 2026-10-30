@@ -42,38 +42,21 @@ st.title("🍌 Wanna Be With U")
 st.subheader("Dashboard Laporan & Keuangan")
 
 # -----------------------------------------------------------------------------
-# NAVIGASI SIDEBAR BERBASIS 2 KATEGORI DROPDOWN
+# NAVIGASI SIDEBAR TANPA DROPDOWN (SEJAJAR)
 # -----------------------------------------------------------------------------
 st.sidebar.markdown("### 📌 Navigasi Menu")
 
-kategori_utama = st.sidebar.selectbox(
-    "Pilih Kategori",
+menu = st.sidebar.selectbox(
+    "Pilih Menu",
     [
-        "📦 Menu Operasional",
-        "📊 Dashboard & Rekap",
-        "🏪 Master Data Toko",
+        "📈 Dashboard Utama",
+        "📊 Rekap Harian, Bulanan, Tahunan",
+        "📦 Produksi & Stok",
+        "🛒 Kelola Penjualan",
+        "💸 Kelola Pengeluaran",
+        "🏪 Kelola Master Toko",
     ],
 )
-
-if kategori_utama == "📦 Menu Operasional":
-  menu = st.sidebar.selectbox(
-      "Pilih Menu",
-      [
-          "📦 Produksi & Stok",
-          "🛒 Kelola Penjualan",
-          "💸 Kelola Pengeluaran",
-      ],
-  )
-elif kategori_utama == "📊 Dashboard & Rekap":
-  menu = st.sidebar.selectbox(
-      "Pilih Menu",
-      [
-          "📈 Dashboard Utama",
-          "📊 Rekap Harian, Bulanan, Tahunan",
-      ],
-  )
-else:
-  menu = st.sidebar.selectbox("Pilih Master", ["🏪 Kelola Master Toko"])
 
 
 def fetch_data(table_name):
