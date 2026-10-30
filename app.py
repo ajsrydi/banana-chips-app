@@ -87,17 +87,34 @@ supabase = init_connection()
 st.title("🍌 Wanna Be With U")
 st.subheader("Dashboard Laporan & Keuangan")
 
-# Menu Navigasi Samping
-menu = st.sidebar.selectbox(
-    "📌 Pilih Menu",
+# -----------------------------------------------------------------------------
+# NAVIGASI SIDEBAR BERBASIS KATEGORI / DROPDOWN
+# -----------------------------------------------------------------------------
+st.sidebar.markdown("### 📌 Navigasi Menu")
+
+kategori_utama = st.sidebar.selectbox(
+    "Pilih Kategori",
     [
-        "📊 Rekap & Dashboard",
-        "📦 Produksi & Stok",
-        "🏪 Kelola Master Toko",
-        "➕ Input & Kelola Penjualan",
-        "💸 Input Pengeluaran",
+        "📊 Dashboard Utama",
+        "📈 Rekap Harian, Bulanan, Tahunan",
+        "📂 Menu Operasional (Dropdown 1)",
+        "🏪 Master Data (Dropdown 2)",
     ],
 )
+
+if kategori_utama == "📊 Dashboard Utama":
+  menu = "Dashboard"
+elif kategori_utama == "📈 Rekap Harian, Bulanan, Tahunan":
+  menu = "Rekap Periodik"
+elif kategori_utama == "📂 Menu Operasional (Dropdown 1)":
+  menu = st.sidebar.selectbox(
+      "Pilih Operasional",
+      ["📦 Produksi & Stok", "🛒 Kelola Penjualan", "💸 Kelola Pengeluaran"],
+  )
+else:
+  menu = st.sidebar.selectbox(
+      "Pilih Master", ["🏪 Kelola Master Toko"]
+  )
 
 
 def fetch_data(table_name):
@@ -110,9 +127,9 @@ def fetch_data(table_name):
 
 
 # -----------------------------------------------------------------------------
-# MENU 1: REKAP & DASHBOARD
+# MENU 1: DASHBOARD UTAMA
 # -----------------------------------------------------------------------------
-if menu == "📊 Rekap & Dashboard":
+if menu == "Dashboard":
   st.markdown("### 📈 Ringkasan Keuangan & Stok")
 
   penjualan = fetch_data("tabel_penjualan")
@@ -127,13 +144,11 @@ if menu == "📊 Rekap & Dashboard":
   total_kirim_qty = sum(item.get("dikirim", 0) for item in penjualan)
   sisa_stok = total_prod_qty - total_kirim_qty
 
-  # Kartu Metrik Keuangan
   col1, col2, col3 = st.columns(3)
   col1.metric("Total Omset", f"Rp {total_omset:,.0f}")
   col2.metric("Total Biaya", f"Rp {total_biaya:,.0f}")
   col3.metric("Estimasi Profit", f"Rp {total_profit:,.0f}")
 
-  # Kartu Metrik Stok
   col4, col5, col6 = st.columns(3)
   col4.metric("Total Produksi", f"{total_prod_qty:,} pcs")
   col5.metric("Total Terkirim", f"{total_kirim_qty:,} pcs")
@@ -154,7 +169,132 @@ if menu == "📊 Rekap & Dashboard":
     st.info("Belum ada data pengeluaran tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 2: PRODUKSI & STOK (BARU)
+# MENU 2: REKAP HARIAN, BULANAN, TAHUNAN (BARU)
+# -----------------------------------------------------------------------------
+elif menu == "Rekap Periodik":
+  st.markdown("### 📊 Rekap Harian, Bulanan & Tahunan")
+
+  penjualan = fetch_data("tabel_penjualan")
+  pengeluaran = fetch_data("tabel_pengeluaran")
+
+  df_penjualan = pd.DataFrame(penjualan) if penjualan else pd.DataFrame()
+  df_pengeluaran = (
+      pd.DataFrame(pengeluaran) if pengeluaran else pd.DataFrame()
+  )
+
+  tab_harian, tab_bulanan, tab_tahunan = st.tabs(
+      ["📅 Harian", "📆 Bulanan", "🗓️ Tahunan"]
+  )
+
+  # --- TAB HARIAN ---
+  with tab_harian:
+    st.markdown("#### Rekap Berdasarkan Tanggal")
+    if not df_penjualan.empty or not df_pengeluaran.empty:
+      # Agregasi Penjualan Harian
+      if not df_penjualan.empty:
+        df_p_harian = (
+            df_penjualan.groupby("tanggal")["total_penjualan"]
+            .sum()
+            .reset_index()
+        )
+      else:
+        df_p_harian = pd.DataFrame(columns=["tanggal", "total_penjualan"])
+
+      # Agregasi Pengeluaran Harian
+      if not df_pengeluaran.empty:
+        df_exp_harian = (
+            df_pengeluaran.groupby("tanggal")["pengeluaran"].sum().reset_index()
+        )
+      else:
+        df_exp_harian = pd.DataFrame(columns=["tanggal", "pengeluaran"])
+
+      # Gabung data harian
+      df_harian = pd.merge(
+          df_p_harian, df_exp_harian, on="tanggal", how="outer"
+      ).fillna(0)
+      df_harian = df_harian.sort_values(by="tanggal", ascending=False)
+      df_harian["Profit Bersih"] = (
+          df_harian["total_penjualan"] - df_harian["pengeluaran"]
+      )
+
+      st.dataframe(df_harian, use_container_width=True)
+    else:
+      st.info("Belum ada data transaksi untuk rekap harian.")
+
+  # --- TAB BULANAN ---
+  with tab_bulanan:
+    st.markdown("#### Rekap Berdasarkan Bulan")
+    if not df_penjualan.empty or not df_pengeluaran.empty:
+      if not df_penjualan.empty:
+        df_penjualan["bulan"] = pd.to_datetime(
+            df_penjualan["tanggal"]
+        ).dt.to_period("M").astype(str)
+        df_p_bulan = (
+            df_penjualan.groupby("bulan")["total_penjualan"].sum().reset_index()
+        )
+      else:
+        df_p_bulan = pd.DataFrame(columns=["bulan", "total_penjualan"])
+
+      if not df_pengeluaran.empty:
+        df_pengeluaran["bulan"] = pd.to_datetime(
+            df_pengeluaran["tanggal"]
+        ).dt.to_period("M").astype(str)
+        df_exp_bulan = (
+            df_pengeluaran.groupby("bulan")["pengeluaran"].sum().reset_index()
+        )
+      else:
+        df_exp_bulan = pd.DataFrame(columns=["bulan", "pengeluaran"])
+
+      df_bulanan = pd.merge(
+          df_p_bulan, df_exp_bulan, on="bulan", how="outer"
+      ).fillna(0)
+      df_bulanan = df_bulanan.sort_values(by="bulan", ascending=False)
+      df_bulanan["Profit Bersih"] = (
+          df_bulanan["total_penjualan"] - df_bulanan["pengeluaran"]
+      )
+
+      st.dataframe(df_bulanan, use_container_width=True)
+    else:
+      st.info("Belum ada data transaksi untuk rekap bulanan.")
+
+  # --- TAB TAHUNAN ---
+  with tab_tahunan:
+    st.markdown("#### Rekap Berdasarkan Tahun")
+    if not df_penjualan.empty or not df_pengeluaran.empty:
+      if not df_penjualan.empty:
+        df_penjualan["tahun"] = pd.to_datetime(
+            df_penjualan["tanggal"]
+        ).dt.year.astype(str)
+        df_p_tahun = (
+            df_penjualan.groupby("tahun")["total_penjualan"].sum().reset_index()
+        )
+      else:
+        df_p_tahun = pd.DataFrame(columns=["tahun", "total_penjualan"])
+
+      if not df_pengeluaran.empty:
+        df_pengeluaran["tahun"] = pd.to_datetime(
+            df_pengeluaran["tanggal"]
+        ).dt.year.astype(str)
+        df_exp_tahun = (
+            df_pengeluaran.groupby("tahun")["pengeluaran"].sum().reset_index()
+        )
+      else:
+        df_exp_tahun = pd.DataFrame(columns=["tahun", "pengeluaran"])
+
+      df_tahunan = pd.merge(
+          df_p_tahun, df_exp_tahun, on="tahun", how="outer"
+      ).fillna(0)
+      df_tahunan = df_tahunan.sort_values(by="tahun", ascending=False)
+      df_tahunan["Profit Bersih"] = (
+          df_tahunan["total_penjualan"] - df_tahunan["pengeluaran"]
+      )
+
+      st.dataframe(df_tahunan, use_container_width=True)
+    else:
+      st.info("Belum ada data transaksi untuk rekap tahunan.")
+
+# -----------------------------------------------------------------------------
+# MENU 3: PRODUKSI & STOK
 # -----------------------------------------------------------------------------
 elif menu == "📦 Produksi & Stok":
   st.markdown("### 📦 Kelola Produksi & Stok Gudang")
@@ -166,7 +306,6 @@ elif menu == "📦 Produksi & Stok":
   total_terkirim = sum(item.get("dikirim", 0) for item in penjualan_list)
   stok_gudang = total_prod - total_terkirim
 
-  # Ringkasan Stok
   c1, c2, c3 = st.columns(3)
   c1.metric("Akumulasi Produksi", f"{total_prod:,} pcs")
   c2.metric("Total Terkirim/Laku", f"{total_terkirim:,} pcs")
@@ -232,7 +371,7 @@ elif menu == "📦 Produksi & Stok":
           st.error(f"❌ Gagal menghapus: {e}")
 
 # -----------------------------------------------------------------------------
-# MENU 3: KELOLA MASTER TOKO
+# MENU 4: KELOLA MASTER TOKO
 # -----------------------------------------------------------------------------
 elif menu == "🏪 Kelola Master Toko":
   st.markdown("### 🏪 Master Data Toko & Harga")
@@ -285,9 +424,9 @@ elif menu == "🏪 Kelola Master Toko":
     st.info("Belum ada toko yang didaftarkan.")
 
 # -----------------------------------------------------------------------------
-# MENU 4: INPUT & KELOLA PENJUALAN
+# MENU 5: KELOLA PENJUALAN
 # -----------------------------------------------------------------------------
-elif menu == "➕ Input & Kelola Penjualan":
+elif menu == "🛒 Kelola Penjualan":
   st.markdown("### 📝 Kelola Catatan Penjualan")
 
   tab1, tab2 = st.tabs(["➕ Tambah Baru", "✏️ Edit / Hapus Data"])
@@ -433,33 +572,61 @@ elif menu == "➕ Input & Kelola Penjualan":
             st.error(f"❌ Gagal menghapus data: {e}")
 
 # -----------------------------------------------------------------------------
-# MENU 5: INPUT PENGELUARAN
+# MENU 6: KELOLA PENGELUARAN
 # -----------------------------------------------------------------------------
-elif menu == "💸 Input Pengeluaran":
-  st.markdown("### 📝 Input Pengeluaran Baru")
+elif menu == "💸 Kelola Pengeluaran":
+  st.markdown("### 📝 Kelola Catatan Pengeluaran")
 
-  with st.form("form_pengeluaran", clear_on_submit=True):
-    tanggal = st.date_input("Tanggal Pengeluaran", datetime.date.today())
-    nama_barang = st.text_input(
-        "Nama Barang / Bahan", placeholder="Contoh: Pisang, Minyak, Plastik"
-    )
-    qty = st.number_input("Kuantitas (Qty)", min_value=0.0, step=0.5)
-    pengeluaran = st.number_input(
-        "Total Biaya Pengeluaran (Rp)", min_value=0.0, step=1000.0, format="%.2f"
-    )
+  tab1, tab2 = st.tabs(["➕ Tambah Baru", "🗑️ Hapus Data"])
 
-    submit_pengeluaran = st.form_submit_button("💾 Simpan Data Pengeluaran")
+  with tab1:
+    with st.form("form_pengeluaran", clear_on_submit=True):
+      tanggal = st.date_input("Tanggal Pengeluaran", datetime.date.today())
+      nama_barang = st.text_input(
+          "Nama Barang / Bahan", placeholder="Contoh: Pisang, Minyak, Plastik"
+      )
+      qty = st.number_input("Kuantitas (Qty)", min_value=0.0, step=0.5)
+      pengeluaran = st.number_input(
+          "Total Biaya Pengeluaran (Rp)", min_value=0.0, step=1000.0, format="%.2f"
+      )
 
-    if submit_pengeluaran:
-      try:
-        data_baru = {
-            "tanggal": str(tanggal),
-            "nama_barang": nama_barang,
-            "qty": qty,
-            "pengeluaran": pengeluaran,
-        }
-        supabase.table("tabel_pengeluaran").insert(data_baru).execute()
-        st.success("✅ Data pengeluaran berhasil disimpan!")
-        st.rerun()
-      except Exception as e:
-        st.error(f"❌ Gagal menyimpan data: {e}")
+      submit_pengeluaran = st.form_submit_button("💾 Simpan Data Pengeluaran")
+
+      if submit_pengeluaran:
+        try:
+          data_baru = {
+              "tanggal": str(tanggal),
+              "nama_barang": nama_barang,
+              "qty": qty,
+              "pengeluaran": pengeluaran,
+          }
+          supabase.table("tabel_pengeluaran").insert(data_baru).execute()
+          st.success("✅ Data pengeluaran berhasil disimpan!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"❌ Gagal menyimpan data: {e}")
+
+  with tab2:
+    pengeluaran_list = fetch_data("tabel_pengeluaran")
+    if not pengeluaran_list:
+      st.info("Belum ada data pengeluaran untuk dihapus.")
+    else:
+      opsi_keluar = {
+          f"ID {item['id']} | {item['tanggal']} | {item['nama_barang']} (Rp {item['pengeluaran']:,.0f})"
+          : item["id"]
+          for item in pengeluaran_list
+      }
+      pilih_hapus_keluar = st.selectbox(
+          "Pilih Pengeluaran yang ingin dihapus", list(opsi_keluar.keys())
+      )
+      id_keluar_dihapus = opsi_keluar[pilih_hapus_keluar]
+
+      if st.button("🗑️ Hapus Pengeluaran Ini"):
+        try:
+          supabase.table("tabel_pengeluaran").delete().eq(
+              "id", id_keluar_dihapus
+          ).execute()
+          st.success("🗑️ Data pengeluaran berhasil dihapus!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"❌ Gagal menghapus: {e}")
