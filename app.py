@@ -216,21 +216,21 @@ elif menu == "🛒 Kelola Penjualan":
             "Pilih Toko", list(opsi_toko.keys()), key="tambah_toko"
         )
         
-        # --- HITUNG JUMLAH BELUM DIBAYAR (KONTRABON) UNTUK TOKO INI & VARIAN INI ---
-        piutang_toko_pcs = sum(
-            item.get("dikirim", 0)
-            for item in penjualan_all
+        # --- FILTER & TAMPILKAN RINCIAN TRANSAKSI BELUM LUNAS (KONTRABON) ---
+        piutang_list = [
+            item for item in penjualan_all
             if item.get("toko") == pilihan_toko_nama
             and item.get("produk", "Coklat") == pilihan_produk_jual
             and "Belum" in str(item.get("status", ""))
-        )
+        ]
 
-        # Menampilkan info piutang/belum bayar toko tersebut
-        if piutang_toko_pcs > 0:
-          st.warning(
-              f"⚠️ **Info Kontrabon:** Toko **{pilihan_toko_nama}** ({pilihan_produk_jual}) "
-              f"masih memiliki tanggungan belum dibayar sebanyak **{piutang_toko_pcs:,} pcs**."
-          )
+        if piutang_list:
+          st.error(f"⚠️ **Tanggungan Kontrabon Aktif ({pilihan_toko_nama} - {pilihan_produk_jual}):**")
+          for p in piutang_list:
+            tgl_p = p.get("tanggal")
+            jml_p = p.get("dikirim", 0)
+            tot_p = p.get("total_penjualan", 0)
+            st.markdown(f"- **Tgl:** `{tgl_p}` | Belum Bayar: **{jml_p} pcs** (Rp {tot_p:,.0f})")
         else:
           st.success(
               f"✅ Toko **{pilihan_toko_nama}** ({pilihan_produk_jual}) lunas / tidak ada tanggungan aktif."
@@ -245,7 +245,6 @@ elif menu == "🛒 Kelola Penjualan":
             "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
         )
         
-        # Nama input diganti menjadi Retur Dari Toko (Opsional)
         retur_toko = st.number_input(
             "Retur Dari Toko (Opsional)",
             min_value=0,
@@ -274,7 +273,7 @@ elif menu == "🛒 Kelola Penjualan":
                 "toko": pilihan_toko_nama,
                 "produk": pilihan_produk_jual,
                 "dikirim": dikirim,
-                "sisa": retur_toko,  # Disimpan ke kolom sisa di database
+                "sisa": retur_toko,
                 "status": status_bayar,
                 "total_penjualan": total_otomatis,
             }
