@@ -126,7 +126,7 @@ if menu == "📦 Produksi & Stok":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan_list
-      if item.get("produk", "Matcha") == "Matcha"
+      if item.get("produk") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -726,7 +726,7 @@ elif menu == "📈 Dashboard Utama":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan
-      if item.get("produk", "Matcha") == "Matcha"
+      if item.get("produk") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -925,70 +925,50 @@ elif menu == "📊 Rekap Laporan & Stok":
       st.info("Belum ada data keuangan tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 6: PANTAU HARGA BAHAN (BARU)
+# MENU 6: PANTAU HARGA BAHAN (MATRIKS SEDERHANA)
 # -----------------------------------------------------------------------------
 elif menu == "📈 Pantau Harga Bahan":
-  st.markdown("### 📈 Pantau Kenaikan Harga Bahan Baku")
-  st.markdown("Gunakan menu ini untuk melihat tren harga satuan bahan baku dari waktu ke waktu berdasarkan catatan pengeluaran Anda.")
+  st.markdown("### 📈 Perkembangan Harga Satuan")
+  st.markdown("Memantau pergerakan harga satuan bahan dan pengeluaran dari waktu ke waktu.")
 
   pengeluaran_list = fetch_data("tabel_pengeluaran")
 
   if not pengeluaran_list:
-    st.info("Belum ada data pengeluaran yang tercatat untuk memantau harga bahan.")
+    st.info("Belum ada data pengeluaran yang tercatat.")
   else:
     df_bahan = pd.DataFrame(pengeluaran_list)
     
-    # Pastikan kolom yang dibutuhkan ada dan hitung harga satuan jika qty > 0
-    if "nama_barang" in df_bahan.columns and "pengeluaran" in df_bahan.columns and "qty" in df_bahan.columns:
+    if "nama_barang" in df_bahan.columns and "pengeluaran" in df_bahan.columns and "qty" in df_bahan.columns and "tanggal" in df_bahan.columns:
       df_bahan["qty"] = pd.to_numeric(df_bahan["qty"], errors="coerce").fillna(0)
       df_bahan["pengeluaran"] = pd.to_numeric(df_bahan["pengeluaran"], errors="coerce").fillna(0)
       
-      # Hitung harga per satuan (jika qty > 0)
+      # Hitung harga satuan
       df_bahan["harga_satuan"] = df_bahan.apply(
           lambda row: row["pengeluaran"] / row["qty"] if row["qty"] > 0 else row["pengeluaran"], axis=1
       )
-
-      # Pilih bahan yang ingin dipantau
-      daftar_tersedia = sorted(df_bahan["nama_barang"].dropna().unique().tolist())
       
-      pilih_bahan_pantau = st.selectbox("Pilih Bahan / Barang yang Ingin Dipantau", daftar_tersedia)
+      # Format tanggal agar rapi
+      df_bahan["tanggal_str"] = pd.to_datetime(df_bahan["tanggal"]).dt.strftime("%d %B %Y")
 
-      df_filtered_bahan = df_bahan[df_bahan["nama_barang"] == pilih_bahan_pantau].sort_values("tanggal")
+      # Buat pivot table (Baris = Tanggal, Kolom = Nama Barang, Isi = Harga Satuan)
+      df_pivot = df_bahan.pivot_table(
+          index="tanggal",
+          columns="nama_barang",
+          values="harga_satuan",
+          aggfunc="mean"
+      ).reset_index()
 
-      if df_filtered_bahan.empty:
-        st.info(f"Tidak ada riwayat untuk bahan '{pilih_bahan_pantau}'.")
-      else:
-        st.markdown(f"#### 📉 Grafik Tren Harga Satuan: `{pilih_bahan_pantau}`")
-        
-        fig_bahan = px.line(
-            df_filtered_bahan,
-            x="tanggal",
-            y="harga_satuan",
-            markers=True,
-            labels={"tanggal": "Tanggal", "harga_satuan": "Harga Satuan (Rp)"},
-        )
-        fig_bahan.update_layout(
-            margin=dict(l=20, r=20, t=20, b=20),
-            xaxis_title="",
-            yaxis_title="Harga Satuan (Rp)",
-        )
-        st.plotly_chart(fig_bahan, use_container_width=True)
+      df_pivot = df_pivot.sort_values("tanggal", ascending=False)
+      df_pivot["tanggal"] = pd.to_datetime(df_pivot["tanggal"]).dt.strftime("%d %B %Y")
+      df_pivot = df_pivot.rename(columns={"tanggal": "tanggal"})
 
-        st.markdown("#### 📋 Riwayat Pembelian & Harga")
-        df_tampil_riwayat = df_filtered_bahan[["tanggal", "qty", "pengeluaran", "harga_satuan"]].rename(columns={
-            "tanggal": "Tanggal",
-            "qty": "Jumlah (Qty)",
-            "pengeluaran": "Total Biaya (Rp)",
-            "harga_satuan": "Harga Satuan (Rp)"
-        })
-        st.dataframe(
-            df_tampil_riwayat.style.format({
-                "Total Biaya (Rp)": "Rp {:,.0f}",
-                "Harga Satuan (Rp)": "Rp {:,.0f}",
-                "Jumlah (Qty)": "{:.1f}"
-            }),
-            use_container_width=True
-        )
+      # Format angka menjadi format Rupiah string agar mirip dengan contoh gambar
+      df_display = df_pivot.copy()
+      for col in df_display.columns:
+        if col != "tanggal":
+          df_display[col] = df_display[col].apply(lambda x: f"Rp {x:,.0f}" if pd.notnull(x) and x > 0 else "")
+
+      st.dataframe(df_display, use_container_width=True)
     else:
       st.error("Struktur data pengeluaran tidak sesuai.")
 
