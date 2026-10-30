@@ -195,7 +195,6 @@ elif menu == "🛒 Kelola Penjualan":
           " Master Toko** terlebih dahulu!"
       )
     else:
-      # Tanggal di atas, Varian Produk dipindah ke bawah tanggal
       tanggal = st.date_input("Tanggal", datetime.date.today(), key="tgl_jual")
       pilihan_produk_jual = st.selectbox(
           "Pilih Varian Produk", LIST_PRODUK, key="jual_prod"
@@ -221,14 +220,16 @@ elif menu == "🛒 Kelola Penjualan":
         potongan = toko_terpilih.get("potongan_persen", 0)
         harga_bersih_pcs = harga_jual - (harga_jual * potongan / 100)
 
+        # Input Jumlah Dikirim ditaruh di atas info rincian harga
+        dikirim = st.number_input(
+            "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
+        )
+
+        # Info rincian harga dipindah ke bawah jumlah dan di atas total
         st.info(
             f"💡 **Varian:** {pilihan_produk_jual} | **Harga Jual:** Rp"
             f" {harga_jual:,.0f} | **Potongan:** {potongan}% \n\n✨ **Harga"
             f" Bersih per Pcs:** Rp {harga_bersih_pcs:,.0f}"
-        )
-
-        dikirim = st.number_input(
-            "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
         )
 
         total_otomatis = dikirim * harga_bersih_pcs
@@ -333,11 +334,12 @@ elif menu == "🛒 Kelola Penjualan":
       h_pot = toko_edit_obj.get("potongan_persen", 0)
       h_bersih_pcs = h_jual - (h_jual * h_pot / 100)
 
-      new_total = new_dikirim * h_bersih_pcs
       st.info(
           f"💡 **Harga Jual:** Rp {h_jual:,.0f} | **Potongan:** {h_pot}% \n\n✨"
           f" **Harga Bersih per Pcs:** Rp {h_bersih_pcs:,.0f}"
       )
+
+      new_total = new_dikirim * h_bersih_pcs
       st.markdown(f"💰 **Total Penjualan:** Rp {new_total:,.0f}")
 
       col_update, col_delete = st.columns(2)
