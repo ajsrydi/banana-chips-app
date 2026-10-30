@@ -216,7 +216,7 @@ elif menu == "🛒 Kelola Penjualan":
             "Pilih Toko", list(opsi_toko.keys()), key="tambah_toko"
         )
         
-        # --- FILTER & TAMPILKAN RINCIAN TRANSAKSI BELUM LUNAS (KONTRABON) ---
+        # --- RINGKASAN REKAP KONTRABON BELUM LUNAS PER TOKO & VARIAN ---
         piutang_list = [
             item for item in penjualan_all
             if item.get("toko") == pilihan_toko_nama
@@ -224,13 +224,15 @@ elif menu == "🛒 Kelola Penjualan":
             and "Belum" in str(item.get("status", ""))
         ]
 
-        if piutang_list:
-          st.error(f"⚠️ **Tanggungan Kontrabon Aktif ({pilihan_toko_nama} - {pilihan_produk_jual}):**")
-          for p in piutang_list:
-            tgl_p = p.get("tanggal")
-            jml_p = p.get("dikirim", 0)
-            tot_p = p.get("total_penjualan", 0)
-            st.markdown(f"- **Tgl:** `{tgl_p}` | Belum Bayar: **{jml_p} pcs** (Rp {tot_p:,.0f})")
+        total_piutang_pcs = sum(item.get("dikirim", 0) for item in piutang_list)
+        total_piutang_rp = sum(item.get("total_penjualan", 0) for item in piutang_list)
+
+        if total_piutang_pcs > 0:
+          st.error(
+              f"🚨 **Kontrabon Belum Dibayar ({pilihan_toko_nama} - {pilihan_produk_jual}):**\n\n"
+              f"- Total Pcs Belum Lunas: **{total_piutang_pcs:,} pcs**\n"
+              f"- Total Tagihan: **Rp {total_piutang_rp:,.0f}**"
+          )
         else:
           st.success(
               f"✅ Toko **{pilihan_toko_nama}** ({pilihan_produk_jual}) lunas / tidak ada tanggungan aktif."
