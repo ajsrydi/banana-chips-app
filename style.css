@@ -1,341 +1,213 @@
 /* =========================================================
-   WANNA BE WITH U — Soft Navy Flat UI
-   Light & Dark Mode compatible
+   WANNA BE WITH U — Soft Navy UI (Stronger Version)
    ========================================================= */
 
 :root {
-  /* Navy soft palette */
-  --navy: #1f2a44;
-  --navy-hover: #17203a;
-  --navy-soft: rgba(31, 42, 68, 0.10);
-
-  --accent: #7f96b8;
-  --accent-hover: #6d84a7;
-  --accent-soft: rgba(127, 150, 184, 0.14);
-
+  --navy: #22304f;
+  --navy-deep: #182238;
+  --navy-soft: rgba(34, 48, 79, 0.08);
+  --accent: #8fa6c7;
+  --accent-soft: rgba(143, 166, 199, 0.16);
   --positive: #7fae94;
   --warning: #cfa96b;
   --negative: #c98a8a;
 
-  --radius-lg: 16px;
+  --radius-lg: 18px;
   --radius-md: 12px;
-  --radius-sm: 8px;
-
-  --transition: 150ms ease;
 }
 
-/* ---------------------------------------------------------
-   DASAR APLIKASI
-   --------------------------------------------------------- */
-
+/* Halaman utama */
 .stApp {
-  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
 
 .block-container {
-  max-width: 1120px;
-  padding-top: 1.75rem;
-  padding-bottom: 3.25rem;
+  max-width: 1150px;
+  padding-top: 2rem;
+  padding-bottom: 3.5rem;
 }
 
-header[data-testid="stHeader"] {
-  background: transparent;
-  border: none;
-}
-
-#MainMenu {
-  visibility: hidden;
-}
-
-footer {
-  visibility: hidden;
-}
-
-/* ---------------------------------------------------------
-   TIPOGRAFI
-   --------------------------------------------------------- */
-
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 700 !important;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-
-h1 {
-  font-size: clamp(1.5rem, 3vw, 1.95rem) !important;
-  margin-bottom: 0.2rem !important;
-}
-
-h2 {
-  font-size: clamp(1.15rem, 2.2vw, 1.4rem) !important;
-}
-
-h3 {
-  font-size: clamp(1rem, 1.8vw, 1.12rem) !important;
-}
-
-h4 {
-  font-size: 0.96rem !important;
-  opacity: 0.88;
-}
-
-p, span, label {
-  font-size: 0.92rem;
-}
-
-/* ---------------------------------------------------------
-   SIDEBAR
-   --------------------------------------------------------- */
-
+/* Sidebar lebih tegas */
 section[data-testid="stSidebar"] {
-  border-right: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
-}
-
-section[data-testid="stSidebar"] .block-container {
-  padding-top: 1.5rem;
+  border-right: 2px solid var(--navy);
+  background: var(--navy-soft);
 }
 
 section[data-testid="stSidebar"] h3 {
-  font-size: 0.7rem !important;
-  font-weight: 700;
+  font-size: 0.72rem !important;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  opacity: 0.5;
-  margin-bottom: 0.9rem !important;
+  letter-spacing: 0.1em;
+  color: var(--navy);
+  opacity: 0.75;
 }
 
 section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-  border-radius: var(--radius-md);
-  border-color: var(--border-color, rgba(128, 128, 128, 0.24));
-  min-height: 44px;
-  font-weight: 600;
+  border-radius: 12px;
+  border: 1px solid var(--navy);
   background: transparent;
-  transition: border-color var(--transition), background var(--transition);
+  min-height: 46px;
+  font-weight: 650;
 }
 
-section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover {
-  border-color: var(--navy);
-  background: var(--navy-soft);
+/* Judul */
+h1 {
+  font-size: clamp(1.7rem, 3.2vw, 2.2rem) !important;
+  font-weight: 850 !important;
+  color: var(--navy) !important;
+  margin-bottom: 0.25rem !important;
 }
 
-/* ---------------------------------------------------------
-   METRIC CARDS
-   --------------------------------------------------------- */
+h2, h3 {
+  color: var(--navy) !important;
+}
 
+/* Metric card lebih jelas */
 [data-testid="stMetric"] {
   background: var(--secondary-background-color, transparent);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
+  border: 1px solid var(--navy);
+  border-left: 5px solid var(--navy);
   border-radius: var(--radius-lg);
-  padding: 18px 20px;
-  transition: border-color var(--transition), background var(--transition);
+  padding: 20px;
+  transition: all 160ms ease;
 }
 
 [data-testid="stMetric"]:hover {
-  border-color: var(--navy);
-  background: var(--navy-soft);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  border-left-color: var(--accent);
+  transform: translateY(-2px);
 }
 
 [data-testid="stMetricLabel"] {
   font-size: 0.74rem !important;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  opacity: 0.6;
+  letter-spacing: 0.08em;
+  opacity: 0.65;
 }
 
 [data-testid="stMetricValue"] {
-  font-size: clamp(1.18rem, 2.3vw, 1.5rem) !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.3rem, 2.5vw, 1.7rem) !important;
+  font-weight: 900 !important;
+  color: var(--navy) !important;
 }
 
-[data-testid="stMetricDelta"] {
-  font-size: 0.76rem !important;
-  font-weight: 600;
-}
-
-/* ---------------------------------------------------------
-   TABS
-   --------------------------------------------------------- */
-
+/* Tabs lebih tegas */
 .stTabs [data-baseweb="tab-list"] {
-  gap: 4px;
-  padding: 4px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--navy);
+  border-radius: 16px;
   background: var(--secondary-background-color, transparent);
 }
 
 .stTabs [data-baseweb="tab"] {
-  border-radius: var(--radius-md);
-  padding: 9px 14px;
-  font-size: 0.85rem;
-  font-weight: 650;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 700;
   color: var(--text-color, inherit);
-  opacity: 0.6;
-  transition: background var(--transition), opacity var(--transition);
+  opacity: 0.65;
 }
 
 .stTabs [data-baseweb="tab"]:hover {
-  opacity: 0.88;
-  background: var(--navy-soft);
+  background: var(--accent-soft);
+  opacity: 0.9;
 }
 
 .stTabs [aria-selected="true"] {
-  background: var(--navy);
+  background: var(--navy) !important;
   color: #ffffff !important;
-  opacity: 1;
+  opacity: 1 !important;
 }
 
-.stTabs [data-baseweb="tab-highlight"] {
-  display: none;
-}
-
-/* ---------------------------------------------------------
-   FORM & INPUT
-   --------------------------------------------------------- */
-
+/* Form */
 [data-testid="stForm"] {
-  background: var(--secondary-background-color, transparent);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
+  border: 1px solid var(--navy);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 22px;
+  background: var(--secondary-background-color, transparent);
 }
 
+/* Input */
 .stTextInput input,
 .stNumberInput input,
 .stDateInput input,
-div[data-baseweb="select"] > div,
-div[data-baseweb="base-input"] {
-  border-radius: var(--radius-md) !important;
-  border-color: var(--border-color, rgba(128, 128, 128, 0.24)) !important;
-  min-height: 42px;
-  transition: border-color var(--transition), box-shadow var(--transition);
+div[data-baseweb="select"] > div {
+  border-radius: 12px !important;
+  border: 1px solid var(--navy) !important;
+  min-height: 44px;
 }
 
 .stTextInput input:focus,
 .stNumberInput input:focus,
 .stDateInput input:focus,
 div[data-baseweb="select"] > div:focus-within {
-  border-color: var(--navy) !important;
-  box-shadow: 0 0 0 3px var(--navy-soft) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 4px var(--accent-soft) !important;
 }
 
-label {
-  font-weight: 600 !important;
-  font-size: 0.83rem !important;
-  opacity: 0.82;
-}
-
-/* ---------------------------------------------------------
-   TOMBOL
-   --------------------------------------------------------- */
-
-.stButton > button,
-.stFormSubmitButton > button,
-.stDownloadButton > button {
-  border-radius: var(--radius-md);
-  border: none;
-  min-height: 42px;
-  padding: 0 18px;
-  font-weight: 700;
-  transition: background var(--transition), border-color var(--transition), color var(--transition);
-}
-
-/* Tombol utama */
+/* Tombol */
 .stButton > button[kind="primary"],
 .stFormSubmitButton > button {
-  background: var(--navy);
-  color: #ffffff;
+  background: var(--navy) !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  min-height: 44px;
+  font-weight: 800;
 }
 
 .stButton > button[kind="primary"]:hover,
 .stFormSubmitButton > button:hover {
-  background: var(--navy-hover);
+  background: var(--navy-deep) !important;
 }
 
-/* Tombol sekunder */
 .stButton > button[kind="secondary"] {
-  background: transparent;
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.24));
-  color: var(--text-color, inherit);
+  border: 1px solid var(--navy) !important;
+  color: var(--navy) !important;
+  background: transparent !important;
+  border-radius: 12px !important;
 }
 
 .stButton > button[kind="secondary"]:hover {
-  border-color: var(--navy);
-  color: var(--navy);
-  background: var(--navy-soft);
+  background: var(--accent-soft) !important;
 }
 
-/* ---------------------------------------------------------
-   ALERT
-   --------------------------------------------------------- */
-
-[data-testid="stAlert"] {
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
-  font-size: 0.9rem;
-}
-
-/* ---------------------------------------------------------
-   TABEL & GRAFIK
-   --------------------------------------------------------- */
-
+/* Tabel */
 [data-testid="stDataFrame"] {
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
+  border: 1px solid var(--navy);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
 [data-testid="stDataFrame"] [role="columnheader"] {
-  font-weight: 700 !important;
-  font-size: 0.76rem !important;
+  background: var(--navy-soft) !important;
+  font-weight: 800 !important;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.06em;
 }
 
+/* Grafik */
 [data-testid="stPlotlyChart"] {
-  background: var(--secondary-background-color, transparent);
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
+  border: 1px solid var(--navy);
   border-radius: var(--radius-lg);
-  padding: 12px;
+  padding: 14px;
+  background: var(--secondary-background-color, transparent);
 }
 
-/* ---------------------------------------------------------
-   RADIO & CHECKBOX
-   --------------------------------------------------------- */
-
-div[role="radiogroup"] label,
-div[data-testid="stCheckbox"] label {
-  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.18));
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
-  transition: border-color var(--transition), background var(--transition);
+/* Alert */
+[data-testid="stAlert"] {
+  border-radius: 12px;
+  border: 1px solid var(--navy);
 }
 
-div[role="radiogroup"] label:hover,
-div[data-testid="stCheckbox"] label:hover {
-  border-color: var(--navy);
-  background: var(--navy-soft);
-}
-
-/* ---------------------------------------------------------
-   RESPONSIVE
-   --------------------------------------------------------- */
-
+/* Mobile */
 @media (max-width: 768px) {
   .block-container {
     padding-left: 1rem;
     padding-right: 1rem;
-  }
-
-  [data-testid="stMetric"] {
-    padding: 15px;
-  }
-
-  [data-testid="stMetricValue"] {
-    font-size: 1.18rem !important;
   }
 
   .stButton > button,
@@ -343,12 +215,7 @@ div[data-testid="stCheckbox"] label:hover {
     width: 100%;
   }
 
-  .stTabs [data-baseweb="tab"] {
-    padding: 8px 10px;
-    font-size: 0.76rem;
-  }
-
-  [data-testid="stForm"] {
-    padding: 15px;
+  [data-testid="stMetric"] {
+    padding: 16px;
   }
 }
