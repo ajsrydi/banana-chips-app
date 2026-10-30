@@ -55,6 +55,7 @@ menu = st.sidebar.selectbox(
         "💸 Kelola Pengeluaran",
         "📈 Dashboard Utama",
         "📊 Rekap Laporan & Stok",
+        "📈 Pantau Harga Bahan",
         "🏪 Kelola Master Toko",
     ],
 )
@@ -125,7 +126,7 @@ if menu == "📦 Produksi & Stok":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan_list
-      if item.get("produk") == "Matcha"
+      if item.get("produk", "Matcha") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -725,7 +726,7 @@ elif menu == "📈 Dashboard Utama":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan
-      if item.get("produk") == "Matcha"
+      if item.get("produk", "Matcha") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -774,7 +775,6 @@ elif menu == "📈 Dashboard Utama":
         df_chart_bulanan["total_penjualan"] - df_chart_bulanan["pengeluaran"]
     )
 
-    # Ubah format DataFrame agar Plotly menampilkan legenda nama yang rapi
     df_chart_melted = df_chart_bulanan.rename(columns={
         "bulan": "Bulan",
         "total_penjualan": "Pemasukan",
@@ -925,7 +925,75 @@ elif menu == "📊 Rekap Laporan & Stok":
       st.info("Belum ada data keuangan tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 6: KELOLA MASTER TOKO
+# MENU 6: PANTAU HARGA BAHAN (BARU)
+# -----------------------------------------------------------------------------
+elif menu == "📈 Pantau Harga Bahan":
+  st.markdown("### 📈 Pantau Kenaikan Harga Bahan Baku")
+  st.markdown("Gunakan menu ini untuk melihat tren harga satuan bahan baku dari waktu ke waktu berdasarkan catatan pengeluaran Anda.")
+
+  pengeluaran_list = fetch_data("tabel_pengeluaran")
+
+  if not pengeluaran_list:
+    st.info("Belum ada data pengeluaran yang tercatat untuk memantau harga bahan.")
+  else:
+    df_bahan = pd.DataFrame(pengeluaran_list)
+    
+    # Pastikan kolom yang dibutuhkan ada dan hitung harga satuan jika qty > 0
+    if "nama_barang" in df_bahan.columns and "pengeluaran" in df_bahan.columns and "qty" in df_bahan.columns:
+      df_bahan["qty"] = pd.to_numeric(df_bahan["qty"], errors="coerce").fillna(0)
+      df_bahan["pengeluaran"] = pd.to_numeric(df_bahan["pengeluaran"], errors="coerce").fillna(0)
+      
+      # Hitung harga per satuan (jika qty > 0)
+      df_bahan["harga_satuan"] = df_bahan.apply(
+          lambda row: row["pengeluaran"] / row["qty"] if row["qty"] > 0 else row["pengeluaran"], axis=1
+      )
+
+      # Pilih bahan yang ingin dipantau
+      daftar_tersedia = sorted(df_bahan["nama_barang"].dropna().unique().tolist())
+      
+      pilih_bahan_pantau = st.selectbox("Pilih Bahan / Barang yang Ingin Dipantau", daftar_tersedia)
+
+      df_filtered_bahan = df_bahan[df_bahan["nama_barang"] == pilih_bahan_pantau].sort_values("tanggal")
+
+      if df_filtered_bahan.empty:
+        st.info(f"Tidak ada riwayat untuk bahan '{pilih_bahan_pantau}'.")
+      else:
+        st.markdown(f"#### 📉 Grafik Tren Harga Satuan: `{pilih_bahan_pantau}`")
+        
+        fig_bahan = px.line(
+            df_filtered_bahan,
+            x="tanggal",
+            y="harga_satuan",
+            markers=True,
+            labels={"tanggal": "Tanggal", "harga_satuan": "Harga Satuan (Rp)"},
+        )
+        fig_bahan.update_layout(
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis_title="",
+            yaxis_title="Harga Satuan (Rp)",
+        )
+        st.plotly_chart(fig_bahan, use_container_width=True)
+
+        st.markdown("#### 📋 Riwayat Pembelian & Harga")
+        df_tampil_riwayat = df_filtered_bahan[["tanggal", "qty", "pengeluaran", "harga_satuan"]].rename(columns={
+            "tanggal": "Tanggal",
+            "qty": "Jumlah (Qty)",
+            "pengeluaran": "Total Biaya (Rp)",
+            "harga_satuan": "Harga Satuan (Rp)"
+        })
+        st.dataframe(
+            df_tampil_riwayat.style.format({
+                "Total Biaya (Rp)": "Rp {:,.0f}",
+                "Harga Satuan (Rp)": "Rp {:,.0f}",
+                "Jumlah (Qty)": "{:.1f}"
+            }),
+            use_container_width=True
+        )
+    else:
+      st.error("Struktur data pengeluaran tidak sesuai.")
+
+# -----------------------------------------------------------------------------
+# MENU 7: KELOLA MASTER TOKO
 # -----------------------------------------------------------------------------
 elif menu == "🏪 Kelola Master Toko":
   st.markdown("### 🏪 Master Data Toko & Harga")
