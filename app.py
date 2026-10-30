@@ -31,7 +31,7 @@ st.markdown(
         margin-bottom: 1.5rem !important;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 1.5rem !important;
+        font-size: 1.4rem !important;
         font-weight: bold !important;
         color: #38bdf8 !important;
     }
@@ -92,6 +92,7 @@ menu = st.sidebar.selectbox(
     "📌 Pilih Menu",
     [
         "📊 Rekap & Dashboard",
+        "📦 Produksi & Stok",
         "🏪 Kelola Master Toko",
         "➕ Input & Kelola Penjualan",
         "💸 Input Pengeluaran",
@@ -112,36 +113,126 @@ def fetch_data(table_name):
 # MENU 1: REKAP & DASHBOARD
 # -----------------------------------------------------------------------------
 if menu == "📊 Rekap & Dashboard":
-  st.markdown("### 📈 Ringkasan Keuangan")
+  st.markdown("### 📈 Ringkasan Keuangan & Stok")
 
   penjualan = fetch_data("tabel_penjualan")
   pengeluaran = fetch_data("tabel_pengeluaran")
+  produksi = fetch_data("tabel_produksi")
 
   total_omset = sum(item.get("total_penjualan", 0) for item in penjualan)
   total_biaya = sum(item.get("pengeluaran", 0) for item in pengeluaran)
   total_profit = total_omset - total_biaya
 
+  total_prod_qty = sum(item.get("jumlah_produksi", 0) for item in produksi)
+  total_kirim_qty = sum(item.get("dikirim", 0) for item in penjualan)
+  sisa_stok = total_prod_qty - total_kirim_qty
+
+  # Kartu Metrik Keuangan
   col1, col2, col3 = st.columns(3)
   col1.metric("Total Omset", f"Rp {total_omset:,.0f}")
   col2.metric("Total Biaya", f"Rp {total_biaya:,.0f}")
   col3.metric("Estimasi Profit", f"Rp {total_profit:,.0f}")
 
+  # Kartu Metrik Stok
+  col4, col5, col6 = st.columns(3)
+  col4.metric("Total Produksi", f"{total_prod_qty:,} pcs")
+  col5.metric("Total Terkirim", f"{total_kirim_qty:,} pcs")
+  col6.metric("Sisa Stok Gudang", f"{sisa_stok:,} pcs")
+
   st.markdown("---")
 
-  st.markdown("#### 📦 Data Penjualan")
+  st.markdown("#### 📦 Data Penjualan Terakhir")
   if penjualan:
     st.dataframe(penjualan, use_container_width=True)
   else:
     st.info("Belum ada data penjualan tercatat.")
 
-  st.markdown("#### 💸 Data Pengeluaran")
+  st.markdown("#### 💸 Data Pengeluaran Terakhir")
   if pengeluaran:
     st.dataframe(pengeluaran, use_container_width=True)
   else:
     st.info("Belum ada data pengeluaran tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 2: KELOLA MASTER TOKO
+# MENU 2: PRODUKSI & STOK (BARU)
+# -----------------------------------------------------------------------------
+elif menu == "📦 Produksi & Stok":
+  st.markdown("### 📦 Kelola Produksi & Stok Gudang")
+
+  produksi_list = fetch_data("tabel_produksi")
+  penjualan_list = fetch_data("tabel_penjualan")
+
+  total_prod = sum(item.get("jumlah_produksi", 0) for item in produksi_list)
+  total_terkirim = sum(item.get("dikirim", 0) for item in penjualan_list)
+  stok_gudang = total_prod - total_terkirim
+
+  # Ringkasan Stok
+  c1, c2, c3 = st.columns(3)
+  c1.metric("Akumulasi Produksi", f"{total_prod:,} pcs")
+  c2.metric("Total Terkirim/Laku", f"{total_terkirim:,} pcs")
+  c3.metric("Stok Tersedia", f"{stok_gudang:,} pcs")
+
+  st.markdown("---")
+
+  tab1, tab2 = st.tabs(["➕ Tambah Produksi", "📋 Riwayat & Hapus Produksi"])
+
+  with tab1:
+    with st.form("form_produksi", clear_on_submit=True):
+      tanggal_prod = st.date_input("Tanggal Produksi", datetime.date.today())
+      jumlah_prod = st.number_input(
+          "Jumlah Produksi (Pcs)", min_value=1, step=1, value=50
+      )
+      keterangan = st.text_input(
+          "Keterangan / Batch", placeholder="Contoh: Batch 1, Pisang Kepok"
+      )
+
+      submit_prod = st.form_submit_button("💾 Simpan Data Produksi")
+
+      if submit_prod:
+        try:
+          data_prod = {
+              "tanggal": str(tanggal_prod),
+              "jumlah_produksi": jumlah_prod,
+              "keterangan": keterangan,
+          }
+          supabase.table("tabel_produksi").insert(data_prod).execute()
+          st.success("✅ Data produksi berhasil disimpan!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"❌ Gagal menyimpan produksi: {e}")
+
+  with tab2:
+    if not produksi_list:
+      st.info("Belum ada catatan produksi.")
+    else:
+      st.markdown("#### Daftar Riwayat Produksi")
+      df_prod = pd.DataFrame(produksi_list)
+      st.dataframe(df_prod, use_container_width=True)
+
+      st.markdown("---")
+      st.markdown("#### Hapus Catatan Produksi")
+      opsi_hapus_prod = {
+          f"ID {p['id']} | {p['tanggal']} | {p['jumlah_produksi']} pcs ({p['keterangan']})"
+          : p['id']
+          for p in produksi_list
+      }
+      pilih_hapus = st.selectbox(
+          "Pilih data produksi yang ingin dihapus", list(opsi_hapus_prod.keys())
+      )
+      id_dihapus = opsi_hapus_prod[pilih_hapus]
+
+      if st.button("🗑️ Hapus Data Produksi Ini"):
+        try:
+          supabase.table("tabel_produksi").delete().eq(
+              "id", id_dihapus
+          ).execute()
+          st.success("🗑️ Data produksi berhasil dihapus!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"❌ Gagal menghapus: {e}")
+
+# -----------------------------------------------------------------------------
+# MENU 3: KELOLA MASTER TOKO
 # -----------------------------------------------------------------------------
 elif menu == "🏪 Kelola Master Toko":
   st.markdown("### 🏪 Master Data Toko & Harga")
@@ -194,7 +285,7 @@ elif menu == "🏪 Kelola Master Toko":
     st.info("Belum ada toko yang didaftarkan.")
 
 # -----------------------------------------------------------------------------
-# MENU 3: INPUT & KELOLA PENJUALAN (DENGAN FITUR EDIT & HAPUS)
+# MENU 4: INPUT & KELOLA PENJUALAN
 # -----------------------------------------------------------------------------
 elif menu == "➕ Input & Kelola Penjualan":
   st.markdown("### 📝 Kelola Catatan Penjualan")
@@ -204,7 +295,6 @@ elif menu == "➕ Input & Kelola Penjualan":
   data_toko = fetch_data("tabel_toko")
   opsi_toko = {t["nama_toko"]: t for t in data_toko} if data_toko else {}
 
-  # --- TAB 1: TAMBAH PENJUALAN BARU ---
   with tab1:
     if not data_toko:
       st.warning(
@@ -233,7 +323,6 @@ elif menu == "➕ Input & Kelola Penjualan":
             "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
         )
 
-        # Otomatis hitung total penjualan bersih
         total_otomatis = dikirim * harga_bersih_pcs
         st.markdown(
             f"💰 **Total Penjualan Bersih (Otomatis):** Rp"
@@ -256,13 +345,11 @@ elif menu == "➕ Input & Kelola Penjualan":
           except Exception as e:
             st.error(f"❌ Gagal menyimpan data: {e}")
 
-  # --- TAB 2: EDIT / HAPUS PENJUALAN ---
   with tab2:
     penjualan_list = fetch_data("tabel_penjualan")
     if not penjualan_list:
       st.info("Belum ada data penjualan untuk diedit atau dihapus.")
     else:
-      # Buat dictionary pilihan berdasarkan ID dan ringkasan data
       opsi_penjualan = {
           f"ID {item['id']} | {item['tanggal']} | {item['toko']} (Dikirim: {item['dikirim']})"
           : item
@@ -287,7 +374,6 @@ elif menu == "➕ Input & Kelola Penjualan":
 
         new_tanggal = st.date_input("Tanggal", value=current_tanggal)
 
-        # Pilihan toko (pastikan toko saat ini ada di list, jika tidak default ke index 0)
         list_toko_nama = list(opsi_toko.keys()) if opsi_toko else [current_toko]
         default_idx = (
             list_toko_nama.index(current_toko)
@@ -305,7 +391,6 @@ elif menu == "➕ Input & Kelola Penjualan":
             value=int(current_dikirim),
         )
 
-        # Hitung harga bersih berdasarkan toko yang dipilih saat edit
         toko_edit_obj = opsi_toko.get(new_toko, {"harga_jual": 0, "potongan_persen": 0})
         h_jual = toko_edit_obj.get("harga_jual", 0)
         h_pot = toko_edit_obj.get("potongan_persen", 0)
@@ -348,7 +433,7 @@ elif menu == "➕ Input & Kelola Penjualan":
             st.error(f"❌ Gagal menghapus data: {e}")
 
 # -----------------------------------------------------------------------------
-# MENU 4: INPUT PENGELUARAN
+# MENU 5: INPUT PENGELUARAN
 # -----------------------------------------------------------------------------
 elif menu == "💸 Input Pengeluaran":
   st.markdown("### 📝 Input Pengeluaran Baru")
