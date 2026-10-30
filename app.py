@@ -275,7 +275,7 @@ elif menu == "🛒 Kelola Penjualan":
         )
         
         retur_toko = st.number_input(
-            "Retur Dari Toko (Opsional)",
+            "Retur Dari Toko (Jika Ada)",
             min_value=0,
             step=1,
             value=0,
@@ -412,7 +412,7 @@ elif menu == "🛒 Kelola Penjualan":
               key=f"edit_dikirim_{current_id}",
           )
           new_sisa = st.number_input(
-              "Retur Dari Toko (Opsional)",
+              "Retur Dari Toko (Jika Ada)",
               min_value=0,
               step=1,
               value=int(current_sisa),
