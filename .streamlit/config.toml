@@ -1,0 +1,18 @@
+[theme]
+# Pilih tema dasar: "light" (terang) atau "dark" (gelap)
+base="light"
+
+# Warna aksen utama (untuk tombol aktif, slider, tab aktif, dll)
+primaryColor="#2563eb"
+
+# Warna latar belakang utama aplikasi
+backgroundColor="#f4f6f9"
+
+# Warna latar belakang untuk sidebar dan elemen card/container tertentu
+secondaryBackgroundColor="#ffffff"
+
+# Warna teks utama agar nyaman dibaca
+textColor="#1e293b"
+
+# Jenis font (pilih: "sans serif", "serif", atau "monospace")
+font="sans serif"
