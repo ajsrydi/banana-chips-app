@@ -54,7 +54,7 @@ menu = st.sidebar.selectbox(
         "🛒 Kelola Penjualan",
         "💸 Kelola Pengeluaran",
         "📈 Dashboard Utama",
-        "📊 Rekap Harian, Bulanan, Tahunan",
+        "📊 Rekap Bulanan & Tahunan",
         "🏪 Kelola Master Toko",
     ],
 )
@@ -677,7 +677,7 @@ elif menu == "💸 Kelola Pengeluaran":
       st.info("Belum ada data pengeluaran tercatat.")
 
 # -----------------------------------------------------------------------------
-# MENU 4: DASHBOARD UTAMA (FIXED PLOTLY CHART)
+# MENU 4: DASHBOARD UTAMA
 # -----------------------------------------------------------------------------
 elif menu == "📈 Dashboard Utama":
   st.markdown("### 📈 Ringkasan Keuangan & Stok")
@@ -749,7 +749,7 @@ elif menu == "📈 Dashboard Utama":
 
   st.markdown("---")
 
-  # Grafik Tren Omset Penjualan Harian Menggunakan Plotly (Aman di HP & Tidak Nyangkut)
+  # Grafik Tren Omset Penjualan Harian Menggunakan Plotly
   st.markdown("#### 📊 Grafik Tren Omset Harian")
   if penjualan:
     df_p_chart = pd.DataFrame(penjualan)
@@ -774,10 +774,10 @@ elif menu == "📈 Dashboard Utama":
     st.info("Belum ada data penjualan untuk ditampilkan pada grafik.")
 
 # -----------------------------------------------------------------------------
-# MENU 5: REKAP HARIAN, BULANAN, TAHUNAN
+# MENU 5: REKAP BULANAN & TAHUNAN (REKAP HARIAN DIHAPUS)
 # -----------------------------------------------------------------------------
-elif menu == "📊 Rekap Harian, Bulanan, Tahunan":
-  st.markdown("### 📊 Rekap Harian, Bulanan & Tahunan")
+elif menu == "📊 Rekap Bulanan & Tahunan":
+  st.markdown("### 📊 Rekap Bulanan & Tahunan")
 
   penjualan = fetch_data("tabel_penjualan")
   pengeluaran = fetch_data("tabel_pengeluaran")
@@ -787,61 +787,36 @@ elif menu == "📊 Rekap Harian, Bulanan, Tahunan":
       pd.DataFrame(pengeluaran) if pengeluaran else pd.DataFrame()
   )
 
-  tab_harian, tab_bulanan, tab_tahunan = st.tabs(
-      ["📅 Harian", "📆 Bulanan", "🗓️ Tahunan"]
+  tab_bulanan, tab_tahunan = st.tabs(
+      ["📆 Rekap Bulanan", "🗓️ Rekap Tahunan"]
   )
 
-  with tab_harian:
-    st.markdown("#### Rekap Berdasarkan Tanggal")
-    if not df_penjualan.empty or not df_pengeluaran.empty:
-      df_p_harian = (
-          df_penjualan.groupby("tanggal")["total_penjualan"]
-          .sum()
-          .reset_index()
-          if not df_penjualan.empty
-          else pd.DataFrame(columns=["tanggal", "total_penjualan"])
-      )
-      df_exp_harian = (
-          df_pengeluaran.groupby("tanggal")["pengeluaran"].sum().reset_index()
-          if not df_pengeluaran.empty
-          else pd.DataFrame(columns=["tanggal", "pengeluaran"])
-      )
-
-      df_harian = pd.merge(
-          df_p_harian, df_exp_harian, on="tanggal", how="outer"
-      ).fillna(0)
-      df_harian = df_harian.sort_values(by="tanggal", ascending=False)
-      df_harian["Profit Bersih"] = (
-          df_harian["total_penjualan"] - df_harian["pengeluaran"]
-      )
-
-      st.dataframe(df_harian, use_container_width=True)
-    else:
-      st.info("Belum ada data transaksi untuk rekap harian.")
-
   with tab_bulanan:
-    st.markdown("#### Rekap Berdasarkan Bulan")
+    st.markdown("#### 📆 Rekap Berdasarkan Bulan")
     if not df_penjualan.empty or not df_pengeluaran.empty:
-      if not df_penjualan.empty:
-        df_penjualan["bulan"] = (
-            pd.to_datetime(df_penjualan["tanggal"])
+      df_p = df_penjualan.copy() if not df_penjualan.empty else pd.DataFrame()
+      df_e = df_pengeluaran.copy() if not df_pengeluaran.empty else pd.DataFrame()
+
+      if not df_p.empty:
+        df_p["bulan"] = (
+            pd.to_datetime(df_p["tanggal"])
             .dt.to_period("M")
             .astype(str)
         )
         df_p_bulan = (
-            df_penjualan.groupby("bulan")["total_penjualan"].sum().reset_index()
+            df_p.groupby("bulan")["total_penjualan"].sum().reset_index()
         )
       else:
         df_p_bulan = pd.DataFrame(columns=["bulan", "total_penjualan"])
 
-      if not df_pengeluaran.empty:
-        df_pengeluaran["bulan"] = (
-            pd.to_datetime(df_pengeluaran["tanggal"])
+      if not df_e.empty:
+        df_e["bulan"] = (
+            pd.to_datetime(df_e["tanggal"])
             .dt.to_period("M")
             .astype(str)
         )
         df_exp_bulan = (
-            df_pengeluaran.groupby("bulan")["pengeluaran"].sum().reset_index()
+            df_e.groupby("bulan")["pengeluaran"].sum().reset_index()
         )
       else:
         df_exp_bulan = pd.DataFrame(columns=["bulan", "pengeluaran"])
@@ -850,33 +825,51 @@ elif menu == "📊 Rekap Harian, Bulanan, Tahunan":
           df_p_bulan, df_exp_bulan, on="bulan", how="outer"
       ).fillna(0)
       df_bulanan = df_bulanan.sort_values(by="bulan", ascending=False)
-      df_bulanan["Profit Bersih"] = (
+      df_bulanan["profit_bersih"] = (
           df_bulanan["total_penjualan"] - df_bulanan["pengeluaran"]
       )
 
-      st.dataframe(df_bulanan, use_container_width=True)
+      # Merapikan nama kolom agar lebih jelas dan profesional
+      df_bulanan = df_bulanan.rename(columns={
+          "bulan": "Bulan",
+          "total_penjualan": "Total Penjualan (Rp)",
+          "pengeluaran": "Total Pengeluaran (Rp)",
+          "profit_bersih": "Profit Bersih (Rp)"
+      })
+
+      st.dataframe(
+          df_bulanan.style.format({
+              "Total Penjualan (Rp)": "Rp {:,.0f}",
+              "Total Pengeluaran (Rp)": "Rp {:,.0f}",
+              "Profit Bersih (Rp)": "Rp {:,.0f}"
+          }),
+          use_container_width=True,
+      )
     else:
       st.info("Belum ada data transaksi untuk rekap bulanan.")
 
   with tab_tahunan:
-    st.markdown("#### Rekap Berdasarkan Tahunan")
+    st.markdown("#### 🗓️ Rekap Berdasarkan Tahun")
     if not df_penjualan.empty or not df_pengeluaran.empty:
-      if not df_penjualan.empty:
-        df_penjualan["tahun"] = (
-            pd.to_datetime(df_penjualan["tanggal"]).dt.year.astype(str)
+      df_p = df_penjualan.copy() if not df_penjualan.empty else pd.DataFrame()
+      df_e = df_pengeluaran.copy() if not df_pengeluaran.empty else pd.DataFrame()
+
+      if not df_p.empty:
+        df_p["tahun"] = (
+            pd.to_datetime(df_p["tanggal"]).dt.year.astype(str)
         )
         df_p_tahun = (
-            df_penjualan.groupby("tahun")["total_penjualan"].sum().reset_index()
+            df_p.groupby("tahun")["total_penjualan"].sum().reset_index()
         )
       else:
         df_p_tahun = pd.DataFrame(columns=["tahun", "total_penjualan"])
 
-      if not df_pengeluaran.empty:
-        df_pengeluaran["tahun"] = (
-            pd.to_datetime(df_pengeluaran["tanggal"]).dt.year.astype(str)
+      if not df_e.empty:
+        df_e["tahun"] = (
+            pd.to_datetime(df_e["tanggal"]).dt.year.astype(str)
         )
         df_exp_tahun = (
-            df_pengeluaran.groupby("tahun")["pengeluaran"].sum().reset_index()
+            df_e.groupby("tahun")["pengeluaran"].sum().reset_index()
         )
       else:
         df_exp_tahun = pd.DataFrame(columns=["tahun", "pengeluaran"])
@@ -885,11 +878,26 @@ elif menu == "📊 Rekap Harian, Bulanan, Tahunan":
           df_p_tahun, df_exp_tahun, on="tahun", how="outer"
       ).fillna(0)
       df_tahunan = df_tahunan.sort_values(by="tahun", ascending=False)
-      df_tahunan["Profit Bersih"] = (
+      df_tahunan["profit_bersih"] = (
           df_tahunan["total_penjualan"] - df_tahunan["pengeluaran"]
       )
 
-      st.dataframe(df_tahunan, use_container_width=True)
+      # Merapikan nama kolom agar lebih jelas dan profesional
+      df_tahunan = df_tahunan.rename(columns={
+          "tahun": "Tahun",
+          "total_penjualan": "Total Penjualan (Rp)",
+          "pengeluaran": "Total Pengeluaran (Rp)",
+          "profit_bersih": "Profit Bersih (Rp)"
+      })
+
+      st.dataframe(
+          df_tahunan.style.format({
+              "Total Penjualan (Rp)": "Rp {:,.0f}",
+              "Total Pengeluaran (Rp)": "Rp {:,.0f}",
+              "Profit Bersih (Rp)": "Rp {:,.0f}"
+          }),
+          use_container_width=True,
+      )
     else:
       st.info("Belum ada data transaksi untuk rekap tahunan.")
 
