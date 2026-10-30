@@ -555,4 +555,25 @@ elif menu == "🏪 Kelola Master Toko":
         try:
           data_toko = {
               "nama_toko": nama_toko.strip(),
-              "harga_
+              "harga_jual": harga_jual,
+              "potongan_persen": potongan_persen,
+          }
+          supabase.table("tabel_toko").upsert(
+              data_toko, on_conflict="nama_toko"
+          ).execute()
+          st.success(f"✅ Data toko '{nama_toko}' berhasil disimpan!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"❌ Gagal menyimpan toko: {e}")
+
+  st.markdown("---")
+  st.markdown("#### 📋 Daftar Toko Terdaftar")
+  list_toko = fetch_data("tabel_toko")
+  if list_toko:
+    df_toko = pd.DataFrame(list_toko)
+    df_toko["Harga Bersih per Pcs (Rp)"] = df_toko["harga_jual"] - (
+        df_toko["harga_jual"] * df_toko["potongan_persen"] / 100
+    )
+    st.dataframe(df_toko, use_container_width=True)
+  else:
+    st.info("Belum ada toko yang didaftarkan.")
