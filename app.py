@@ -180,10 +180,7 @@ if menu == "📦 Produksi & Stok":
 # MENU 2: KELOLA PENJUALAN
 # -----------------------------------------------------------------------------
 elif menu == "🛒 Kelola Penjualan":
-  # --- JUDUL UTAMA DIPINDAHKAN KE PALING ATAS ---
-  st.markdown("### 📝 Kelola Catatan Penjualan & Kontrabon")
-
-  # --- REKAP GLOBAL DI BAWAH JUDUL UTAMA ---
+  # --- 1. REKAP GLOBAL DI POSISI PALING ATAS ---
   st.markdown("#### 🚨 Rekap Toko Belum Lunas (Kontrabon Aktif)")
   penjualan_all = fetch_data("tabel_penjualan")
   piutang_all = [
@@ -207,6 +204,9 @@ elif menu == "🛒 Kelola Penjualan":
     st.success("🎉 Mantap! Semua toko sudah lunas (tidak ada kontrabon aktif).")
 
   st.markdown("---")
+
+  # --- 2. JUDUL KELOLA CATATAN DI BAWAH REKAP ---
+  st.markdown("### 📝 Kelola Catatan Penjualan & Kontrabon")
 
   tab1, tab2, tab3 = st.tabs(
       ["➕ Tambah Baru", "✏️ Edit / Pelunasan", "📦 Data Penjualan"]
