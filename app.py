@@ -177,13 +177,13 @@ if menu == "📦 Produksi & Stok":
           st.error(f"❌ Gagal menghapus: {e}")
 
 # -----------------------------------------------------------------------------
-# MENU 2: KELOLA PENJUALAN
+# MENU 2: KELOLA PENJUALAN (DENGAN STATUS KONTRABON & SISA)
 # -----------------------------------------------------------------------------
 elif menu == "🛒 Kelola Penjualan":
-  st.markdown("### 📝 Kelola Catatan Penjualan")
+  st.markdown("### 📝 Kelola Catatan Penjualan & Kontrabon")
 
   tab1, tab2, tab3 = st.tabs(
-      ["➕ Tambah Baru", "✏️ Edit / Hapus Data", "📦 Data Penjualan"]
+      ["➕ Tambah Baru", "✏️ Edit / Pelunasan", "📦 Data Penjualan"]
   )
 
   data_toko = fetch_data("tabel_toko")
@@ -223,6 +223,17 @@ elif menu == "🛒 Kelola Penjualan":
         dikirim = st.number_input(
             "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
         )
+        sisa_titipan = st.number_input(
+            "Sisa Stok / Retur di Toko (Opsional)",
+            min_value=0,
+            step=1,
+            value=0,
+            key="tambah_sisa",
+        )
+
+        status_bayar = st.selectbox(
+            "Status Pembayaran", ["Belum Lunas (Kontrabon)", "Lunas"], key="tambah_status"
+        )
 
         st.info(
             f"💡 **Varian:** {pilihan_produk_jual} | **Harga Jual:** Rp"
@@ -240,6 +251,8 @@ elif menu == "🛒 Kelola Penjualan":
                 "toko": pilihan_toko_nama,
                 "produk": pilihan_produk_jual,
                 "dikirim": dikirim,
+                "sisa": sisa_titipan,
+                "status": status_bayar,
                 "total_penjualan": total_otomatis,
             }
             supabase.table("tabel_penjualan").insert(data_baru).execute()
@@ -251,9 +264,8 @@ elif menu == "🛒 Kelola Penjualan":
   with tab2:
     penjualan_list = fetch_data("tabel_penjualan")
     if not penjualan_list:
-      st.info("Belum ada data penjualan untuk diedit atau dihapus.")
+      st.info("Belum ada data penjualan untuk diedit atau dilunasi.")
     else:
-      # Ekstrak daftar bulan yang tersedia dari data penjualan (format: YYYY-MM)
       daftar_bulan = sorted(
           list(
               set(
@@ -268,12 +280,10 @@ elif menu == "🛒 Kelola Penjualan":
       if not daftar_bulan:
         st.info("Belum ada data bulan transaksi.")
       else:
-        # Dropdown untuk memilih bulan
         pilih_bulan = st.selectbox(
             "📅 Pilih Bulan Transaksi", daftar_bulan, key="filter_bulan_edit"
         )
 
-        # Filter data penjualan berdasarkan bulan yang dipilih
         penjualan_filtered_bulan = [
             item
             for item in penjualan_list
@@ -284,13 +294,13 @@ elif menu == "🛒 Kelola Penjualan":
           st.info(f"Tidak ada data penjualan pada bulan {pilih_bulan}.")
         else:
           opsi_penjualan = {
-              f"ID {item['id']} | {item['tanggal']} | {item.get('toko')} [{item.get('produk', 'Coklat')}] (Dikirim: {item['dikirim']})"
+              f"ID {item['id']} | {item['tanggal']} | {item.get('toko')} [{item.get('produk', 'Coklat')}] - Status: {item.get('status', 'Belum Lunas (Kontrabon)')}"
               : item
               for item in penjualan_filtered_bulan
           }
 
           pilih_data = st.selectbox(
-              "Pilih Data Penjualan yang ingin diubah/dihapus",
+              "Pilih Data Penjualan yang ingin diubah / dilunasi",
               list(opsi_penjualan.keys()),
               key="pilih_data_edit",
           )
@@ -303,8 +313,10 @@ elif menu == "🛒 Kelola Penjualan":
           current_toko = data_terpilih["toko"]
           current_produk = data_terpilih.get("produk", "Coklat")
           current_dikirim = data_terpilih["dikirim"]
+          current_sisa = data_terpilih.get("sisa", 0)
+          current_status = data_terpilih.get("status", "Belum Lunas (Kontrabon)")
 
-          st.markdown(f"**Edit Data [ID: {current_id}]**")
+          st.markdown(f"**Edit / Pelunasan Data [ID: {current_id}]**")
 
           new_tanggal = st.date_input(
               "Tanggal", value=current_tanggal, key=f"edit_tgl_{current_id}"
@@ -348,6 +360,25 @@ elif menu == "🛒 Kelola Penjualan":
               value=int(current_dikirim),
               key=f"edit_dikirim_{current_id}",
           )
+          new_sisa = st.number_input(
+              "Sisa Stok / Retur di Toko",
+              min_value=0,
+              step=1,
+              value=int(current_sisa),
+              key=f"edit_sisa_{current_id}",
+          )
+
+          idx_status = (
+              ["Belum Lunas (Kontrabon)", "Lunas"].index(current_status)
+              if current_status in ["Belum Lunas (Kontrabon)", "Lunas"]
+              else 0
+          )
+          new_status = st.selectbox(
+              "Status Pembayaran",
+              ["Belum Lunas (Kontrabon)", "Lunas"],
+              index=idx_status,
+              key=f"edit_status_{current_id}",
+          )
 
           toko_edit_obj = next(
               (
@@ -372,7 +403,7 @@ elif menu == "🛒 Kelola Penjualan":
 
           col_update, col_delete = st.columns(2)
           if col_update.button(
-              "🔄 Update Data",
+              "🔄 Update / Lunasi Data",
               key=f"btn_update_{current_id}",
               use_container_width=True,
           ):
@@ -382,6 +413,8 @@ elif menu == "🛒 Kelola Penjualan":
                   "toko": new_toko,
                   "produk": new_produk,
                   "dikirim": new_dikirim,
+                  "sisa": new_sisa,
+                  "status": new_status,
                   "total_penjualan": new_total,
               }
               supabase.table("tabel_penjualan").update(update_payload).eq(
@@ -407,13 +440,24 @@ elif menu == "🛒 Kelola Penjualan":
               st.error(f"❌ Gagal menghapus data: {e}")
 
   with tab3:
-    st.markdown("#### 📦 Keseluruhan Data Penjualan")
+    st.markdown("#### 📦 Keseluruhan Data Penjualan & Kontrabon")
     penjualan_list = fetch_data("tabel_penjualan")
     if penjualan_list:
       df_penjualan = pd.DataFrame(penjualan_list)
       if "produksi" in df_penjualan.columns:
         df_penjualan = df_penjualan.drop(columns=["produksi"])
-      st.dataframe(df_penjualan, use_container_width=True)
+      
+      # Fungsi styling untuk memberi warna pada baris yang belum lunas
+      def highlight_status(row):
+        status = row.get("status", "Belum Lunas (Kontrabon)")
+        if "Belum" in str(status):
+          return ["background-color: rgba(255, 75, 75, 0.15)"] * len(row)
+        return [""] * len(row)
+
+      st.dataframe(
+          df_penjualan.style.apply(highlight_status, axis=1),
+          use_container_width=True,
+      )
     else:
       st.info("Belum ada data penjualan tercatat.")
 
@@ -499,6 +543,11 @@ elif menu == "📈 Dashboard Utama":
   produksi = fetch_data("tabel_produksi")
 
   total_omset = sum(item.get("total_penjualan", 0) for item in penjualan)
+  parse_piutang = sum(
+      item.get("total_penjualan", 0)
+      for item in penjualan
+      if "Belum" in str(item.get("status", ""))
+  )
   total_biaya = sum(item.get("pengeluaran", 0) for item in pengeluaran)
   total_profit = total_omset - total_biaya
 
@@ -508,7 +557,7 @@ elif menu == "📈 Dashboard Utama":
 
   col1, col2, col3 = st.columns(3)
   col1.metric("Total Omset", f"Rp {total_omset:,.0f}")
-  col2.metric("Total Biaya", f"Rp {total_biaya:,.0f}")
+  col2.metric("Total Belum Lunas (Kontrabon)", f"Rp {parse_piutang:,.0f}")
   col3.metric("Estimasi Profit", f"Rp {total_profit:,.0f}")
 
   col4, col5, col6 = st.columns(3)
