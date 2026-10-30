@@ -195,9 +195,12 @@ elif menu == "🛒 Kelola Penjualan":
           " Master Toko** terlebih dahulu!"
       )
     else:
+      # Tanggal di atas, Varian Produk dipindah ke bawah tanggal
+      tanggal = st.date_input("Tanggal", datetime.date.today(), key="tgl_jual")
       pilihan_produk_jual = st.selectbox(
           "Pilih Varian Produk", LIST_PRODUK, key="jual_prod"
       )
+
       toko_filtered = [
           t for t in data_toko if t.get("produk", "Coklat") == pilihan_produk_jual
       ]
@@ -224,8 +227,6 @@ elif menu == "🛒 Kelola Penjualan":
             f" Bersih per Pcs:** Rp {harga_bersih_pcs:,.0f}"
         )
 
-        # Input di luar form agar total langsung terhitung secara real-time saat diubah
-        tanggal = st.date_input("Tanggal", datetime.date.today(), key="tgl_jual")
         dikirim = st.number_input(
             "Jumlah Dikirim / Laku", min_value=0, step=1, key="tambah_dikirim"
         )
@@ -262,6 +263,7 @@ elif menu == "🛒 Kelola Penjualan":
       pilih_data = st.selectbox(
           "Pilih Data Penjualan yang ingin diubah/dihapus",
           list(opsi_penjualan.keys()),
+          key="pilih_data_edit",
       )
       data_terpilih = opsi_penjualan[pilih_data]
 
@@ -273,91 +275,106 @@ elif menu == "🛒 Kelola Penjualan":
       current_produk = data_terpilih.get("produk", "Coklat")
       current_dikirim = data_terpilih["dikirim"]
 
-      with st.form("form_edit_penjualan"):
-        st.markdown(f"**Edit Data [ID: {current_id}]**")
+      st.markdown(f"**Edit Data [ID: {current_id}]**")
 
-        new_tanggal = st.date_input("Tanggal", value=current_tanggal)
-        new_produk = st.selectbox(
-            "Varian Produk",
-            LIST_PRODUK,
-            index=(
-                LIST_PRODUK.index(current_produk)
-                if current_produk in LIST_PRODUK
-                else 0
-            ),
-        )
+      new_tanggal = st.date_input(
+          "Tanggal", value=current_tanggal, key=f"edit_tgl_{current_id}"
+      )
+      new_produk = st.selectbox(
+          "Varian Produk",
+          LIST_PRODUK,
+          index=(
+              LIST_PRODUK.index(current_produk)
+              if current_produk in LIST_PRODUK
+              else 0
+          ),
+          key=f"edit_prod_{current_id}",
+      )
 
-        toko_filtered_edit = [
-            t for t in data_toko if t.get("produk", "Coklat") == new_produk
-        ]
-        list_toko_nama = (
-            [t["nama_toko"] for t in toko_filtered_edit]
-            if toko_filtered_edit
-            else [current_toko]
-        )
+      toko_filtered_edit = [
+          t for t in data_toko if t.get("produk", "Coklat") == new_produk
+      ]
+      list_toko_nama = (
+          [t["nama_toko"] for t in toko_filtered_edit]
+          if toko_filtered_edit
+          else [current_toko]
+      )
 
-        default_idx = (
-            list_toko_nama.index(current_toko)
-            if current_toko in list_toko_nama
-            else 0
-        )
-        new_toko = st.selectbox(
-            "Pilih Toko", list_toko_nama, index=default_idx
-        )
+      default_idx = (
+          list_toko_nama.index(current_toko)
+          if current_toko in list_toko_nama
+          else 0
+      )
+      new_toko = st.selectbox(
+          "Pilih Toko",
+          list_toko_nama,
+          index=default_idx,
+          key=f"edit_toko_{current_id}",
+      )
 
-        new_dikirim = st.number_input(
-            "Jumlah Dikirim / Laku",
-            min_value=0,
-            step=1,
-            value=int(current_dikirim),
-        )
+      new_dikirim = st.number_input(
+          "Jumlah Dikirim / Laku",
+          min_value=0,
+          step=1,
+          value=int(current_dikirim),
+          key=f"edit_dikirim_{current_id}",
+      )
 
-        toko_edit_obj = next(
-            (
-                t
-                for t in data_toko
-                if t["nama_toko"] == new_toko
-                and t.get("produk", "Coklat") == new_produk
-            ),
-            {"harga_jual": 0, "potongan_persen": 0},
-        )
-        h_jual = toko_edit_obj.get("harga_jual", 0)
-        h_pot = toko_edit_obj.get("potongan_persen", 0)
-        h_bersih_pcs = h_jual - (h_jual * h_pot / 100)
+      toko_edit_obj = next(
+          (
+              t
+              for t in data_toko
+              if t["nama_toko"] == new_toko
+              and t.get("produk", "Coklat") == new_produk
+          ),
+          {"harga_jual": 0, "potongan_persen": 0},
+      )
+      h_jual = toko_edit_obj.get("harga_jual", 0)
+      h_pot = toko_edit_obj.get("potongan_persen", 0)
+      h_bersih_pcs = h_jual - (h_jual * h_pot / 100)
 
-        new_total = new_dikirim * h_bersih_pcs
-        st.markdown(f"💰 **Total Penjualan:** Rp {new_total:,.0f}")
+      new_total = new_dikirim * h_bersih_pcs
+      st.info(
+          f"💡 **Harga Jual:** Rp {h_jual:,.0f} | **Potongan:** {h_pot}% \n\n✨"
+          f" **Harga Bersih per Pcs:** Rp {h_bersih_pcs:,.0f}"
+      )
+      st.markdown(f"💰 **Total Penjualan:** Rp {new_total:,.0f}")
 
-        col_update, col_delete = st.columns(2)
-        update_btn = col_update.form_submit_button("🔄 Update Data")
-        delete_btn = col_delete.form_submit_button("🗑️ Hapus Data")
+      col_update, col_delete = st.columns(2)
+      if col_update.button(
+          "🔄 Update Data",
+          key=f"btn_update_{current_id}",
+          use_container_width=True,
+      ):
+        try:
+          update_payload = {
+              "tanggal": str(new_tanggal),
+              "toko": new_toko,
+              "produk": new_produk,
+              "dikirim": new_dikirim,
+              "total_penjualan": new_total,
+          }
+          supabase.table("tabel_penjualan").update(update_payload).eq(
+              "id", current_id
+          ).execute()
+          st.success(f"✅ Data ID {current_id} berhasil diperbarui!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"❌ Gagal memperbarui data: {e}")
 
-        if update_btn:
-          try:
-            update_payload = {
-                "tanggal": str(new_tanggal),
-                "toko": new_toko,
-                "produk": new_produk,
-                "dikirim": new_dikirim,
-                "total_penjualan": new_total,
-            }
-            supabase.table("tabel_penjualan").update(update_payload).eq(
-                "id", current_id
-            ).execute()
-            st.success(f"✅ Data ID {current_id} berhasil diperbarui!")
-            st.rerun()
-          except Exception as e:
-            st.error(f"❌ Gagal memperbarui data: {e}")
-
-        if delete_btn:
-          try:
-            supabase.table("tabel_penjualan").delete().eq(
-                "id", current_id
-            ).execute()
-            st.success(f"🗑️ Data ID {current_id} berhasil dihapus!")
-            st.rerun()
-          except Exception as e:
-            st.error(f"❌ Gagal menghapus data: {e}")
+      if col_delete.button(
+          "🗑️ Hapus Data",
+          key=f"btn_delete_{current_id}",
+          use_container_width=True,
+      ):
+        try:
+          supabase.table("tabel_penjualan").delete().eq(
+              "id", current_id
+          ).execute()
+          st.success(f"🗑️ Data ID {current_id} berhasil dihapus!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"❌ Gagal menghapus data: {e}")
 
   with tab3:
     st.markdown("#### 📦 Keseluruhan Data Penjualan")
