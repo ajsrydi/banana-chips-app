@@ -1,3 +1,23 @@
+import streamlit as st
+from supabase import create_client
+
+st.title("🍌 Tes Koneksi Supabase")
+
+# Inisialisasi
+url = st.secrets["supabase"]["url"]
+key = st.secrets["supabase"]["key"]
+supabase = create_client(url, key)
+
+# Coba ambil data tes
+try:
+  # Kita tes panggil tabel penjualan
+  res = supabase.table("tabel_penjualan").select("*").limit(1).execute()
+  st.success("✅ Koneksi ke Supabase BERHASIL dan Kunci Valid!")
+  st.write(res.data)
+except Exception as e:
+  st.error(f"❌ Error detail: {e}")
+
+
 import datetime
 import streamlit as st
 from supabase import Client, create_client
