@@ -196,6 +196,31 @@ elif menu == "🛒 Kelola Penjualan":
           " Master Toko** terlebih dahulu!"
       )
     else:
+      # --- REKAP GLOBAL DI ATAS: TOKO APA SAJA YANG BELUM BAYAR ---
+      st.markdown("#### 🚨 Rekap Toko Belum Lunas (Kontrabon Aktif)")
+      piutang_all = [
+          item
+          for item in penjualan_all
+          if "Belum" in str(item.get("status", ""))
+      ]
+
+      if piutang_all:
+        df_piutang = pd.DataFrame(piutang_all)
+        df_ringkasan = (
+            df_piutang.groupby(["toko", "produk"])
+            .agg({"dikirim": "sum", "total_penjualan": "sum"})
+            .reset_index()
+        )
+        for _, row in df_ringkasan.iterrows():
+          st.warning(
+              f"🏪 **{row['toko']}** [{row['produk']}] ➡️ **{row['dikirim']:,}"
+              f" pcs** belum dibayar (Rp {row['total_penjualan']:,.0f})"
+          )
+      else:
+        st.success("🎉 Mantap! Semua toko sudah lunas (tidak ada kontrabon aktif).")
+
+      st.markdown("---")
+
       tanggal = st.date_input("Tanggal", datetime.date.today(), key="tgl_jual")
       pilihan_produk_jual = st.selectbox(
           "Pilih Varian Produk", LIST_PRODUK, key="jual_prod"
@@ -215,30 +240,8 @@ elif menu == "🛒 Kelola Penjualan":
         pilihan_toko_nama = st.selectbox(
             "Pilih Toko", list(opsi_toko.keys()), key="tambah_toko"
         )
-        
-        # --- RINGKASAN REKAP KONTRABON BELUM LUNAS PER TOKO & VARIAN ---
-        piutang_list = [
-            item for item in penjualan_all
-            if item.get("toko") == pilihan_toko_nama
-            and item.get("produk", "Coklat") == pilihan_produk_jual
-            and "Belum" in str(item.get("status", ""))
-        ]
-
-        total_piutang_pcs = sum(item.get("dikirim", 0) for item in piutang_list)
-        total_piutang_rp = sum(item.get("total_penjualan", 0) for item in piutang_list)
-
-        if total_piutang_pcs > 0:
-          st.error(
-              f"🚨 **Kontrabon Belum Dibayar ({pilihan_toko_nama} - {pilihan_produk_jual}):**\n\n"
-              f"- Total Pcs Belum Lunas: **{total_piutang_pcs:,} pcs**\n"
-              f"- Total Tagihan: **Rp {total_piutang_rp:,.0f}**"
-          )
-        else:
-          st.success(
-              f"✅ Toko **{pilihan_toko_nama}** ({pilihan_produk_jual}) lunas / tidak ada tanggungan aktif."
-          )
-
         toko_terpilih = opsi_toko[pilihan_toko_nama]
+
         harga_jual = toko_terpilih.get("harga_jual", 0)
         potongan = toko_terpilih.get("potongan_persen", 0)
         harga_bersih_pcs = harga_jual - (harga_jual * potongan / 100)
