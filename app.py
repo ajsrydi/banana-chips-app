@@ -8,67 +8,21 @@ st.set_page_config(
     page_title="Wanna Be With U - Laporan", page_icon="🍌", layout="centered"
 )
 
-# -----------------------------------------------------------------------------
-# CUSTOM CSS FOR STYLING
-# -----------------------------------------------------------------------------
-st.markdown(
-    """
-    <style>
-    .main {
-        background-color: #0f172a;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    h1 {
-        color: #facc15 !important;
-        font-weight: 800 !important;
-        text-align: center;
-        margin-bottom: 0px !important;
-    }
-    .stSubheader {
-        color: #cbd5e1 !important;
-        text-align: center;
-        font-size: 1.1rem !important;
-        margin-bottom: 1.5rem !important;
-    }
-    div[data-testid="stMetricValue"] {
-        font-size: 1.4rem !important;
-        font-weight: bold !important;
-        color: #38bdf8 !important;
-    }
-    div[data-testid="stForm"] {
-        background-color: #1e293b;
-        border: 1px solid #334155;
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-    }
-    div[data-testid="stForm"] button {
-        background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%) !important;
-        color: #000000 !important;
-        font-weight: bold !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 10px 20px !important;
-        width: 100% !important;
-        transition: transform 0.2s, opacity 0.2s;
-    }
-    div[data-testid="stForm"] button:active {
-        transform: scale(0.98);
-    }
-    div[data-testid="stDataFrame"] {
-        background-color: #1e293b;
-        border-radius: 12px;
-        padding: 8px;
-        border: 1px solid #334155;
-    }
-    section[data-testid="stSidebar"] {
-        background-color: #0f172a !important;
-        border-right: 1px solid #334155;
-    }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
+
+# Fungsi untuk memuat file CSS eksternal
+def load_css(file_name):
+  try:
+    with open(file_name) as f:
+      st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+  except FileNotFoundError:
+    st.warning(
+        f"File {file_name} tidak ditemukan. Pastikan file berada di direktori"
+        " yang sama."
+    )
+
+
+# Muat styling dari file style.css
+load_css("style.css")
 
 
 # -----------------------------------------------------------------------------
@@ -88,7 +42,7 @@ st.title("🍌 Wanna Be With U")
 st.subheader("Dashboard Laporan & Keuangan")
 
 # -----------------------------------------------------------------------------
-# NAVIGASI SIDEBAR (MENU UTAMA SEJAJAR / TIDAK BERATINGKAT)
+# NAVIGASI SIDEBAR
 # -----------------------------------------------------------------------------
 st.sidebar.markdown("### 📌 Navigasi Menu")
 
