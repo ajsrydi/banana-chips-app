@@ -71,6 +71,30 @@ def fetch_data(table_name):
 # Pilihan Varian Produk
 LIST_PRODUK = ["Coklat", "Matcha"]
 
+# Daftar Pilihan Barang / Bahan Pengeluaran sesuai gambar
+LIST_BARANG_PENGELUARAN = [
+    "keripik pisang",
+    "kemasan coklat",
+    "kemasan matcha",
+    "coklat",
+    "matcha",
+    "perisa matcha",
+    "minyak",
+    "keresek",
+    "keripik singkong",
+    "bawang putih",
+    "bawang merah",
+    "cabai kering",
+    "cabai rawit",
+    "gula",
+    "garam",
+    "jeruk",
+    "daun jeruk",
+    "buruh",
+    "ongkos",
+    "amplop",
+]
+
 # -----------------------------------------------------------------------------
 # MENU 1: PRODUKSI & STOK
 # -----------------------------------------------------------------------------
@@ -180,7 +204,6 @@ if menu == "📦 Produksi & Stok":
 # MENU 2: KELOLA PENJUALAN
 # -----------------------------------------------------------------------------
 elif menu == "🛒 Kelola Penjualan":
-  # --- 1. REKAP GLOBAL DI POSISI PALING ATAS ---
   st.markdown("#### 🚨 Rekap Toko Belum Lunas (Kontrabon Aktif)")
   penjualan_all = fetch_data("tabel_penjualan")
   piutang_all = [
@@ -205,7 +228,6 @@ elif menu == "🛒 Kelola Penjualan":
 
   st.markdown("---")
 
-  # --- 2. JUDUL KELOLA CATATAN DI BAWAH REKAP ---
   st.markdown("### 📝 Kelola Catatan Penjualan & Kontrabon")
 
   tab1, tab2, tab3 = st.tabs(
@@ -500,14 +522,15 @@ elif menu == "💸 Kelola Pengeluaran":
   with tab1:
     with st.form("form_pengeluaran", clear_on_submit=True):
       tanggal = st.date_input("Tanggal Pengeluaran", datetime.date.today())
-      nama_barang = st.text_input(
-          "Nama Barang / Bahan",
-          placeholder="Contoh: Pisang, Matcha Powder, Minyak",
-      )
-      qty = st.number_input("Kuantitas (Qty)", min_value=0.0, step=0.5)
+      
+      # Nama Barang / Bahan diubah menjadi Dropdown sesuai gambar
+      nama_barang = st.selectbox("Nama Barang / Bahan", LIST_BARANG_PENGELUARAN)
+      
+      # Posisi Biaya Pengeluaran di atas, Banyak Barang di bawah
       pengeluaran = st.number_input(
           "Total Biaya Pengeluaran (Rp)", min_value=0.0, step=1000.0, format="%.2f"
       )
+      qty = st.number_input("Banyak Barang", min_value=0.0, step=0.5)
 
       submit_pengeluaran = st.form_submit_button("💾 Simpan Data Pengeluaran")
 
