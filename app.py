@@ -59,9 +59,6 @@ def init_connection():
 
 supabase = init_connection()
 
-# Header Utama
-st.title("🍌 Wanna Be With U")
-
 # -----------------------------------------------------------------------------
 # SIDEBAR: PENGATURAN TEMA & NAVIGASI MENU
 # -----------------------------------------------------------------------------
@@ -70,7 +67,7 @@ pilih_tema = st.sidebar.radio(
     "Mode Tampilan", ["☀️ Light Mode", "🌙 Dark Mode"], horizontal=True
 )
 
-# Terapkan styling instan berdasarkan pilihan tema di sidebar
+# Terapkan styling instan berdasarkan pilihan tema di sidebar (Header diperbaiki agar selalu terang saat Dark Mode)
 if pilih_tema == "🌙 Dark Mode":
   st.markdown(
       """
@@ -84,7 +81,8 @@ if pilih_tema == "🌙 Dark Mode":
             color: #fafafa !important;
             border-color: #30363d !important;
         }
-        h1, h2, h3, p, span, label {
+        /* Memastikan judul utama, subjudul, dan teks markdown di dark mode berwarna putih */
+        h1, h2, h3, h4, h5, h6, span, label, .stMarkdown p {
             color: #fafafa !important;
         }
         </style>
@@ -125,6 +123,9 @@ menu = st.sidebar.selectbox(
         "🏪 Kelola Master Toko",
     ],
 )
+
+# Header Utama
+st.title("🍌 Wanna Be With U")
 
 
 def fetch_data(table_name):
@@ -210,7 +211,7 @@ if menu == "🏠 Home":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan
-      if item.get("produk", "Matcha") == "Matcha"
+      if item.get("produk") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -325,7 +326,7 @@ elif menu == "📦 Produksi & Stok":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan_list
-      if item.get("produk", "Matcha") == "Matcha"
+      if item.get("produk") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
