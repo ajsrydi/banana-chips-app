@@ -59,16 +59,17 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 6px 10px -1px rgba(37, 99, 235, 0.3);
 }
 
-/* Sidebar Styling (Solid & Tidak Transparan) */
+/* EFEK GLASSMORPHISM ALA IPHONE PADA SIDEBAR */
 [data-testid="stSidebar"] {
-    background-color: var(--secondary-background-color) !important;
-    opacity: 1 !important;
-    border-right: 1px solid rgba(128, 128, 128, 0.15);
-    box-shadow: 5px 0px 15px rgba(0, 0, 0, 0.1);
+    background-color: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05) !important;
 }
 
 [data-testid="stSidebar"] > div:first-child {
-    background-color: var(--secondary-background-color) !important;
+    background-color: transparent !important;
 }
 
 /* Tabel Data (Dataframes) */
