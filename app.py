@@ -19,7 +19,6 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Menyembunyikan kursor ketik agar terlihat seperti tombol pilihan murni */
     input {
         caret-color: transparent !important;
     }
@@ -80,6 +79,7 @@ menu = st.sidebar.selectbox(
         "🛒 Kelola Penjualan",
         "💸 Kelola Pengeluaran",
         "📊 Rekap Laporan & Stok",
+        "🏭 Manajemen Stok Bahan",
         "📈 Pantau Harga Bahan",
         "📥 Download Rekap Excel",
         "🏪 Kelola Master Toko",
@@ -170,7 +170,7 @@ if menu == "🏠 Home":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan
-      if item.get("produk", "Matcha") == "Matcha"
+      if item.get("produk") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -319,7 +319,7 @@ elif menu == "📦 Produksi & Stok":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan_list
-      if item.get("produk", "Matcha") == "Matcha"
+      if item.get("produk") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -468,9 +468,7 @@ elif menu == "🛒 Kelola Penjualan":
             key="tambah_status",
         )
 
-        st.info(
-            f"💡 **Harga Bersih per Pcs:** Rp {harga_bersih_pcs:,.0f}"
-        )
+        st.info(f"💡 **Harga Bersih per Pcs:** Rp {harga_bersih_pcs:,.0f}")
         total_otomatis = dikirim * harga_bersih_pcs
         st.markdown(f"💰 **Total Penjualan:** Rp {total_otomatis:,.0f}")
 
@@ -800,14 +798,12 @@ elif menu == "📊 Rekap Laporan & Stok":
   produksi = fetch_data("tabel_produksi")
   pengeluaran = fetch_data("tabel_pengeluaran")
 
-  # FITUR BARU: FILTER RENTANG TANGGAL BEBAS (CUSTOM DATE RANGE)
   st.markdown("📅 **Filter Rentang Tanggal Laporan**")
   col_d1, col_d2 = st.columns(2)
   min_default_date = datetime.date.today() - datetime.timedelta(days=90)
   start_date = col_d1.date_input("Dari Tanggal", min_default_date)
   end_date = col_d2.date_input("Sampai Tanggal", datetime.date.today())
 
-  # Filter data berdasarkan rentang tanggal
   if penjualan:
     df_p_filtered = pd.DataFrame(penjualan)
     df_p_filtered["tanggal_dt"] = pd.to_datetime(
@@ -873,7 +869,98 @@ elif menu == "📊 Rekap Laporan & Stok":
     rc3.metric("Profit Bersih", f"Rp {profit_range:,.0f}")
 
 # -----------------------------------------------------------------------------
-# MENU 6: PANTAU HARGA BAHAN
+# MENU 6: MANAJEMEN STOK BAHAN BAKU MENTAH
+# -----------------------------------------------------------------------------
+elif menu == "🏭 Manajemen Stok Bahan":
+  st.markdown("### 🏭 Manajemen Stok Bahan Baku Mentah")
+  st.markdown(
+      "Pantau ketersediaan bahan baku utama dan atur batas minimum stok."
+  )
+
+  list_bahan_db = fetch_data("tabel_stok_bahan")
+
+  tab1, tab2 = st.tabs(
+      ["📋 Daftar & Status Stok Bahan", "➕ Tambah / Update Master Bahan"]
+  )
+
+  with tab1:
+    if not list_bahan_db:
+      st.info(
+          "Belum ada data stok bahan baku. Silakan daftarkan bahan di tab"
+          " sebelah."
+      )
+    else:
+      df_bahan_stok = pd.DataFrame(list_bahan_db)
+      df_bahan_stok["sisa_stok"] = (
+          df_bahan_stok["stok_masuk"] - df_bahan_stok["stok_keluar"]
+      )
+
+      stok_menipis = df_bahan_stok[
+          df_bahan_stok["sisa_stok"] <= df_bahan_stok["min_warning"]
+      ]
+      if not stok_menipis.empty:
+        for _, row in stok_menipis.iterrows():
+          st.warning(
+              f"⚠️ **Peringatan!** Bahan **{row['nama_bahan']}** tersisa"
+              f" **{row['sisa_stok']} {row['satuan']}**. Segera lakukan"
+              f" restock!"
+          )
+
+      st.markdown("#### 📊 Posisi Stok Bahan Saat Ini")
+      st.dataframe(df_bahan_stok, use_container_width=True)
+
+  with tab2:
+    with st.form("form_master_bahan", clear_on_submit=True):
+      nama_bahan_input = st.selectbox(
+          "Pilih / Nama Bahan", LIST_BARANG_PENGELUARAN
+      )
+      tambah_masuk = st.number_input(
+          "Tambah Stok Masuk (Pembelian)", min_value=0.0, step=1.0
+      )
+      tambah_keluar = st.number_input(
+          "Kurangi Stok (Pemakaian Produksi)", min_value=0.0, step=1.0
+      )
+      satuan_input = st.text_input("Satuan (Contoh: kg, liter, pcs, bal)", "pcs")
+      min_warn_input = st.number_input(
+          "Batas Minimum Peringatan (Warning)", min_value=0.0, value=5.0
+      )
+
+      submit_bahan = st.form_submit_button("💾 Update Stok Bahan")
+
+      if submit_bahan:
+        try:
+          existing = [
+              b
+              for b in list_bahan_db
+              if b["nama_bahan"].lower() == nama_bahan_input.lower()
+          ]
+          if existing:
+            curr_masuk = existing[0].get("stok_masuk", 0) + tambah_masuk
+            curr_keluar = existing[0].get("stok_keluar", 0) + tambah_keluar
+            supabase.table("tabel_stok_bahan").update({
+                "stok_masuk": curr_masuk,
+                "stok_keluar": curr_keluar,
+                "satuan": satuan_input,
+                "min_warning": min_warn_input,
+            }).eq("id", existing[0]["id"]).execute()
+          else:
+            supabase.table("tabel_stok_bahan").insert({
+                "nama_bahan": nama_bahan_input.lower(),
+                "stok_masuk": tambah_masuk,
+                "stok_keluar": tambah_keluar,
+                "satuan": satuan_input,
+                "min_warning": min_warn_input,
+            }).execute()
+
+          st.success(
+              f"✅ Stok bahan '{nama_bahan_input}' berhasil diperbarui!"
+          )
+          st.rerun()
+        except Exception as e:
+          st.error(f"❌ Gagal memperbarui stok bahan: {e}")
+
+# -----------------------------------------------------------------------------
+# MENU 7: PANTAU HARGA BAHAN
 # -----------------------------------------------------------------------------
 elif menu == "📈 Pantau Harga Bahan":
   st.markdown("### 📈 Perkembangan Harga Satuan")
@@ -904,7 +991,7 @@ elif menu == "📈 Pantau Harga Bahan":
     st.dataframe(df_pivot, use_container_width=True)
 
 # -----------------------------------------------------------------------------
-# MENU 7: DOWNLOAD REKAP EXCEL
+# MENU 8: DOWNLOAD REKAP EXCEL
 # -----------------------------------------------------------------------------
 elif menu == "📥 Download Rekap Excel":
   st.markdown("### 📥 Download Rekap Excel")
@@ -938,7 +1025,7 @@ elif menu == "📥 Download Rekap Excel":
     st.success("✅ File Excel siap diunduh!")
 
 # -----------------------------------------------------------------------------
-# MENU 8: KELOLA MASTER TOKO
+# MENU 9: KELOLA MASTER TOKO
 # -----------------------------------------------------------------------------
 elif menu == "🏪 Kelola Master Toko":
   st.markdown("### 🏪 Master Data Toko & Harga")
