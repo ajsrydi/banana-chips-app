@@ -1,100 +1,110 @@
-/* Konfigurasi Global & Font */
+/* Konfigurasi Global & Font Modern */
 .stApp {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
 }
 
-/* Header Utama & Sub-teks */
+/* Header & Judul */
 h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.022em;
     color: var(--text-color);
 }
 
-/* Kartu Metrik (Metric Cards) Profesional */
+/* Kartu Metrik (Metric Cards) ala iOS Widget */
 [data-testid="stMetric"] {
     background-color: var(--secondary-background-color);
-    border: 1px solid rgba(128, 128, 128, 0.2);
+    border: 1px solid rgba(128, 128, 128, 0.15);
     padding: 16px 20px;
-    border-radius: 14px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 [data-testid="stMetric"]:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
 }
 
 [data-testid="stMetricLabel"] {
-    font-size: 0.85rem !important;
+    font-size: 0.8rem !important;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-color);
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
 [data-testid="stMetricValue"] {
-    font-size: 1.45rem !important;
+    font-size: 1.5rem !important;
     font-weight: 800;
-    color: var(--text-color);
 }
 
-/* Tombol Utama (Buttons) */
+/* Tombol Utama (Buttons) dengan Efek Tekan ala iOS */
 .stButton button {
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 600;
     border: none;
     padding: 0.6rem 1.2rem;
     background-color: var(--primary-color);
     color: white !important;
-    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
     transition: all 0.2s ease;
 }
 
 .stButton button:hover {
-    opacity: 0.9;
-    box-shadow: 0 6px 10px -1px rgba(37, 99, 235, 0.3);
+    opacity: 0.92;
+    transform: scale(0.99);
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
 }
 
-/* EFEK GLASSMORPHISM ALA IPHONE PADA SIDEBAR */
+/* EFEK GLASSMORPHISM SIDEBAR ALA IPHONE */
 [data-testid="stSidebar"] {
-    background-color: rgba(255, 255, 255, 0.75) !important;
-    backdrop-filter: blur(25px) !important;
-    -webkit-backdrop-filter: blur(25px) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.4) !important;
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(30px) !important;
+    -webkit-backdrop-filter: blur(30px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 15px 0 35px rgba(0, 0, 0, 0.04) !important;
 }
 
 [data-testid="stSidebar"] > div:first-child {
     background-color: transparent !important;
 }
 
-/* Tabel Data (Dataframes) */
+/* Tabel Data (Dataframes) Modern */
 [data-testid="stDataFrame"] {
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
-    border: 1px solid rgba(128, 128, 128, 0.2);
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
-/* Input Fields & Forms */
+/* Kotak Input & Form (TextInput, NumberInput, Selectbox, DateInput) */
 .stTextInput input, .stNumberInput input, .stSelectbox select, .stDateInput input {
-    border-radius: 8px !important;
-    border: 1px solid rgba(128, 128, 128, 0.3) !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(128, 128, 128, 0.25) !important;
     background-color: var(--background-color) !important;
     color: var(--text-color) !important;
+    padding: 0.5rem 0.75rem !important;
 }
 
-/* Menu Pop-up / Dropdown Bawaan Streamlit (Listbox) */
+/* Menu Dropdown / Pop-up Bawaan Streamlit */
 div[data-baseweb="menu"], div[role="listbox"], div[data-baseweb="popover"] {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
-    border: 1px solid rgba(128, 128, 128, 0.2) !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(128, 128, 128, 0.15) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
 }
 
 div[data-baseweb="menu"] div, div[role="listbox"] div, div[data-baseweb="popover"] div {
     color: var(--text-color) !important;
+}
+
+/* Tab Navigasi */
+[data-testid="stTabs"] button {
+    font-weight: 600;
+    border-radius: 8px 8px 0 0 !important;
 }
