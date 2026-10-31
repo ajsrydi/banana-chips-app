@@ -124,7 +124,7 @@ LIST_BARANG_PENGELUARAN = [
 
 
 # -----------------------------------------------------------------------------
-# FUNGSI BANTUAN: UPDATE OTOMATIS STOK BAHAN BAKU
+# FUNGSI BANTUAN: UPDATE OTOMATIS STOK BAHAN BAKU MENTAH
 # -----------------------------------------------------------------------------
 def update_stok_db(
     nama_bahan,
@@ -212,7 +212,7 @@ if menu == "🏠 Home":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan
-      if item.get("produk", "Matcha") == "Matcha"
+      if item.get("produk") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -333,7 +333,7 @@ if menu == "🏠 Home":
     st.info("Belum ada data transaksi untuk ditampilkan pada grafik bulanan.")
 
 # -----------------------------------------------------------------------------
-# MENU 2: PRODUKSI & STOK (PEMOTONGAN RESEP OTOMATIS)
+# MENU 2: PRODUKSI & STOK (DENGAN PEMOTONGAN RESEP OTOMATIS)
 # -----------------------------------------------------------------------------
 elif menu == "📦 Produksi & Stok":
   st.markdown("### 📦 Kelola Produksi & Stok Gudang")
@@ -401,24 +401,20 @@ elif menu == "📦 Produksi & Stok":
           }
           supabase.table("tabel_produksi").insert(data_prod).execute()
 
-          # Logika Pemotongan Stok Berdasarkan Resep (Per 11 Pcs Produksi Coklat)
+          # LOGIKA PEMOTONGAN STOK BERDASARKAN RESEP PER 11 PCS
           if pilih_produk == "Coklat":
+            # Resep: Keripik Pisang 0.75 Kg, Kemasan Coklat 11 pcs, Coklat 0.25 Kg, Minyak 0.10 L per 11 pcs
             faktor = jumlah_prod / 11.0
-            update_stok_db(
-                "keripik pisang", tambah_keluar=0.75 * faktor, satuan="Kg"
-            )
-            update_stok_db(
-                "kemasan coklat", tambah_keluar=11.0 * faktor, satuan="pcs"
-            )
+            
+            update_stok_db("keripik pisang", tambah_keluar=0.75 * faktor, satuan="Kg")
+            update_stok_db("kemasan coklat", tambah_keluar=11.0 * faktor, satuan="pcs")
             update_stok_db("coklat", tambah_keluar=0.25 * faktor, satuan="Kg")
             update_stok_db("minyak", tambah_keluar=0.10 * faktor, satuan="L")
+
           elif pilih_produk == "Matcha":
             st.info("Resep Matcha masih dalam tahap pengembangan (development).")
 
-          st.success(
-              "✅ Data produksi berhasil disimpan & stok bahan baku otomatis"
-              " terpotong!"
-          )
+          st.success("✅ Data produksi berhasil disimpan & stok bahan baku otomatis terpotong!")
           st.rerun()
         except Exception as e:
           st.error(f"❌ Gagal menyimpan produksi: {e}")
@@ -670,7 +666,7 @@ elif menu == "🛒 Kelola Penjualan":
       )
 
 # -----------------------------------------------------------------------------
-# MENU 4: KELOLA PENGELUARAN (PENAMBAHAN STOK BAHAN OTOMATIS)
+# MENU 4: KELOLA PENGELUARAN (DENGAN PENAMBAHAN STOK MASUK OTOMATIS)
 # -----------------------------------------------------------------------------
 elif menu == "💸 Kelola Pengeluaran":
   st.markdown("### 📝 Kelola Catatan Pengeluaran")
@@ -698,7 +694,7 @@ elif menu == "💸 Kelola Pengeluaran":
           }
           supabase.table("tabel_pengeluaran").insert(data_baru).execute()
 
-          # Tambah stok masuk secara otomatis ke gudang bahan
+          # LOGIKA PENAMBAHAN STOK MASUK OTOMATIS KETIKA BELANJA
           satuan_auto = (
               "Kg"
               if "kg" in nama_barang
@@ -707,10 +703,7 @@ elif menu == "💸 Kelola Pengeluaran":
           )
           update_stok_db(nama_barang, tambah_masuk=qty, satuan=satuan_auto)
 
-          st.success(
-              "✅ Data pengeluaran disimpan & stok bahan baku gudang otomatis"
-              " bertambah!"
-          )
+          st.success("✅ Data pengeluaran disimpan & stok bahan baku gudang otomatis bertambah!")
           st.rerun()
         except Exception as e:
           st.error(f"❌ Gagal: {e}")
