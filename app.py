@@ -59,12 +59,11 @@ def init_connection():
 
 supabase = init_connection()
 
-# Header Utama
-st.title("🍌 Wanna Be With U")
-
 # -----------------------------------------------------------------------------
-# SIDEBAR: NAVIGASI MENU
+# SIDEBAR: JUDUL & NAVIGASI MENU
 # -----------------------------------------------------------------------------
+st.sidebar.title("🍌 Wanna Be With U")
+st.sidebar.markdown("---")
 st.sidebar.markdown("### 📌 Navigasi Menu")
 
 menu = st.sidebar.selectbox(
@@ -280,7 +279,7 @@ elif menu == "📦 Produksi & Stok":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan_list
-      if item.get("produk") == "Matcha"
+      if item.get("produk", "Matcha") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
