@@ -1,7 +1,6 @@
 [theme]
-# Warna aksen utama (tombol, tab aktif, dll)
+# Warna aksen utama profesional (Biru Modern)
 primaryColor = "#2563eb"
 
-# Jenis font
+# Jenis font utama
 font = "sans serif"
-
