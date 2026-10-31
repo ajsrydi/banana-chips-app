@@ -5,9 +5,12 @@ import plotly.express as px
 import streamlit as st
 from supabase import Client, create_client
 
-# Konfigurasi halaman agar optimal di layar HP
+# Konfigurasi halaman agar optimal di layar HP & sidebar otomatis tertutup saat awal buka
 st.set_page_config(
-    page_title="Wanna Be With U - Laporan", page_icon="🍌", layout="centered"
+    page_title="Wanna Be With U - Laporan",
+    page_icon="🍌",
+    layout="centered",
+    initial_sidebar_state="collapsed",
 )
 
 # -----------------------------------------------------------------------------
@@ -22,13 +25,21 @@ st.markdown(
     }
     </style>
     <script>
-    // Membuat input pada dropdown/selectbox menjadi readonly di perangkat mobile
-    document.addEventListener("click", function() {
+    // Fungsi untuk mengunci input selectbox agar tidak memicu keyboard virtual HP
+    function lockSelectInputs() {
         const selectInputs = document.querySelectorAll('div[data-baseweb="select"] input');
         selectInputs.forEach(input => {
             input.setAttribute('readonly', 'true');
+            input.setAttribute('inputmode', 'none');
         });
-    });
+    }
+
+    // Jalankan saat ada klik atau perubahan elemen di halaman
+    document.addEventListener("click", lockSelectInputs);
+    
+    // Observer untuk memantau komponen selectbox secara otomatis
+    const observer = new MutationObserver(lockSelectInputs);
+    observer.observe(document.body, { childList: true, subtree: true });
     </script>
     """,
     unsafe_allow_html=True,
@@ -164,7 +175,7 @@ if menu == "🏠 Home":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan
-      if item.get("produk") == "Matcha"
+      if item.get("produk", "Matcha") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
