@@ -40,7 +40,6 @@ st.markdown(
 )
 
 
-# Fungsi untuk memuat file CSS eksternal
 def load_css(file_name):
   try:
     with open(file_name) as f:
@@ -123,6 +122,49 @@ LIST_BARANG_PENGELUARAN = [
     "amplop",
 ]
 
+
+# -----------------------------------------------------------------------------
+# FUNGSI BANTUAN: UPDATE OTOMATIS STOK BAHAN BAKU
+# -----------------------------------------------------------------------------
+def update_stok_db(
+    nama_bahan,
+    tambah_masuk=0.0,
+    tambah_keluar=0.0,
+    satuan="pcs",
+    min_warn=5.0,
+):
+  try:
+    bahan_lower = nama_bahan.strip().lower()
+    resp = (
+        supabase.table("tabel_stok_bahan")
+        .select("*")
+        .eq("nama_bahan", bahan_lower)
+        .execute()
+    )
+    data_existing = resp.data
+
+    if data_existing:
+      item = data_existing[0]
+      curr_masuk = float(item.get("stok_masuk", 0)) + float(tambah_masuk)
+      curr_keluar = float(item.get("stok_keluar", 0)) + float(tambah_keluar)
+      supabase.table("tabel_stok_bahan").update({
+          "stok_masuk": curr_masuk,
+          "stok_keluar": curr_keluar,
+          "satuan": satuan,
+          "min_warning": min_warn,
+      }).eq("id", item["id"]).execute()
+    else:
+      supabase.table("tabel_stok_bahan").insert({
+          "nama_bahan": bahan_lower,
+          "stok_masuk": float(tambah_masuk),
+          "stok_keluar": float(tambah_keluar),
+          "satuan": satuan,
+          "min_warning": min_warn,
+      }).execute()
+  except Exception as e:
+    print(f"Gagal update stok otomatis: {e}")
+
+
 # -----------------------------------------------------------------------------
 # MENU 1: HOME (RINGKASAN KEUANGAN & STOK + TOP TOKO)
 # -----------------------------------------------------------------------------
@@ -170,7 +212,7 @@ if menu == "🏠 Home":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan
-      if item.get("produk") == "Matcha"
+      if item.get("produk", "Matcha") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -291,7 +333,7 @@ if menu == "🏠 Home":
     st.info("Belum ada data transaksi untuk ditampilkan pada grafik bulanan.")
 
 # -----------------------------------------------------------------------------
-# MENU 2: PRODUKSI & STOK
+# MENU 2: PRODUKSI & STOK (PEMOTONGAN RESEP OTOMATIS)
 # -----------------------------------------------------------------------------
 elif menu == "📦 Produksi & Stok":
   st.markdown("### 📦 Kelola Produksi & Stok Gudang")
@@ -319,7 +361,7 @@ elif menu == "📦 Produksi & Stok":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan_list
-      if item.get("produk") == "Matcha"
+      if item.get("produk", "Matcha") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -345,7 +387,7 @@ elif menu == "📦 Produksi & Stok":
       tanggal_prod = st.date_input("Tanggal Produksi", datetime.date.today())
       pilih_produk = st.selectbox("Varian Produk", LIST_PRODUK)
       jumlah_prod = st.number_input(
-          "Jumlah Produksi (Pcs)", min_value=1, step=1, value=50
+          "Jumlah Produksi (Pcs)", min_value=1, step=1, value=11
       )
 
       submit_prod = st.form_submit_button("💾 Simpan Data Produksi")
@@ -358,7 +400,25 @@ elif menu == "📦 Produksi & Stok":
               "jumlah_produksi": jumlah_prod,
           }
           supabase.table("tabel_produksi").insert(data_prod).execute()
-          st.success("✅ Data produksi berhasil disimpan!")
+
+          # Logika Pemotongan Stok Berdasarkan Resep (Per 11 Pcs Produksi Coklat)
+          if pilih_produk == "Coklat":
+            faktor = jumlah_prod / 11.0
+            update_stok_db(
+                "keripik pisang", tambah_keluar=0.75 * faktor, satuan="Kg"
+            )
+            update_stok_db(
+                "kemasan coklat", tambah_keluar=11.0 * faktor, satuan="pcs"
+            )
+            update_stok_db("coklat", tambah_keluar=0.25 * faktor, satuan="Kg")
+            update_stok_db("minyak", tambah_keluar=0.10 * faktor, satuan="L")
+          elif pilih_produk == "Matcha":
+            st.info("Resep Matcha masih dalam tahap pengembangan (development).")
+
+          st.success(
+              "✅ Data produksi berhasil disimpan & stok bahan baku otomatis"
+              " terpotong!"
+          )
           st.rerun()
         except Exception as e:
           st.error(f"❌ Gagal menyimpan produksi: {e}")
@@ -493,146 +553,102 @@ elif menu == "🛒 Kelola Penjualan":
     if not penjualan_list:
       st.info("Belum ada data penjualan.")
     else:
-      daftar_bulan = sorted(
-          list(
-              set(
-                  str(item["tanggal"])[:7]
-                  for item in penjualan_list
-                  if "tanggal" in item
-              )
-          ),
-          reverse=True,
+      opsi_penjualan = {
+          f"ID {item['id']} | {item.get('tanggal')} | {item.get('toko')} [{item.get('produk', 'Coklat')}] - Status: {item.get('status', 'Belum Lunas')}": item
+          for item in penjualan_list
+      }
+
+      pilih_data_edit = st.selectbox(
+          "Pilih Transaksi untuk Diubah / Dilunasi",
+          list(opsi_penjualan.keys()),
       )
-      if daftar_bulan:
-        pilih_bulan = st.selectbox(
-            "📅 Pilih Bulan Transaksi", daftar_bulan, key="filter_bulan_edit"
-        )
-        penjualan_filtered_bulan = [
-            item
-            for item in penjualan_list
-            if str(item["tanggal"]).startswith(pilih_bulan)
-        ]
-        if penjualan_filtered_bulan:
-          opsi_penjualan = {
-              f"ID {item['id']} | {item['tanggal']} | {item.get('toko')}"
-              f" [{item.get('produk', 'Coklat')}] - Status:"
-              f" {item.get('status', 'Belum Lunas (Kontrabon)')}": item
-              for item in penjualan_filtered_bulan
-          }
-          pilih_data = st.selectbox(
-              "Pilih Data Penjualan",
-              list(opsi_penjualan.keys()),
-              key="pilih_data_edit",
-          )
-          data_terpilih = opsi_penjualan[pilih_data]
+      data_pilih = opsi_penjualan[pilih_data_edit]
+      curr_id = data_pilih["id"]
 
-          current_id = data_terpilih["id"]
-          current_tanggal = datetime.datetime.strptime(
-              data_terpilih["tanggal"], "%Y-%m-%d"
+      with st.form(f"form_edit_jual_{curr_id}"):
+        st.markdown(f"**Edit Transaksi [ID: {curr_id}]**")
+
+        try:
+          default_tgl = datetime.datetime.strptime(
+              str(data_pilih["tanggal"]), "%Y-%m-%d"
           ).date()
-          current_toko = data_terpilih["toko"]
-          current_produk = data_terpilih.get("produk", "Coklat")
-          current_dikirim = data_terpilih["dikirim"]
-          current_status = data_terpilih.get(
-              "status", "Belum Lunas (Kontrabon)"
-          )
+        except:
+          default_tgl = datetime.date.today()
 
-          new_tanggal = st.date_input(
-              "Tanggal", value=current_tanggal, key=f"edit_tgl_{current_id}"
-          )
-          new_produk = st.selectbox(
-              "Varian Produk",
-              LIST_PRODUK,
-              index=(
-                  LIST_PRODUK.index(current_produk)
-                  if current_produk in LIST_PRODUK
-                  else 0
-              ),
-              key=f"edit_prod_{current_id}",
-          )
-          toko_filtered_edit = [
-              t for t in data_toko if t.get("produk", "Coklat") == new_produk
-          ]
-          list_toko_nama = (
-              [t["nama_toko"] for t in toko_filtered_edit]
-              if toko_filtered_edit
-              else [current_toko]
-          )
-          default_idx = (
-              list_toko_nama.index(current_toko)
-              if current_toko in list_toko_nama
-              else 0
-          )
-          new_toko = st.selectbox(
-              "Pilih Toko",
-              list_toko_nama,
-              index=default_idx,
-              key=f"edit_toko_{current_id}",
-          )
-          new_dikirim = st.number_input(
-              "Jumlah Dikirim / Laku",
-              min_value=0,
-              step=1,
-              value=int(current_dikirim),
-              key=f"edit_dikirim_{current_id}",
-          )
-          idx_status = (
-              ["Belum Lunas (Kontrabon)", "Lunas"].index(current_status)
-              if current_status in ["Belum Lunas (Kontrabon)", "Lunas"]
-              else 0
-          )
-          new_status = st.selectbox(
-              "Status Pembayaran",
-              ["Belum Lunas (Kontrabon)", "Lunas"],
-              index=idx_status,
-              key=f"edit_status_{current_id}",
-          )
+        new_tgl = st.date_input("Tanggal", value=default_tgl)
+        curr_prod = data_pilih.get("produk", "Coklat")
+        idx_prod = (
+            LIST_PRODUK.index(curr_prod) if curr_prod in LIST_PRODUK else 0
+        )
+        new_prod = st.selectbox("Varian Produk", LIST_PRODUK, index=idx_prod)
 
-          toko_edit_obj = next(
-              (
-                  t
-                  for t in data_toko
-                  if t["nama_toko"] == new_toko
-                  and t.get("produk", "Coklat") == new_produk
-              ),
-              {"harga_jual": 0, "potongan_persen": 0},
-          )
-          h_jual = toko_edit_obj.get("harga_jual", 0)
-          h_pot = toko_edit_obj.get("potongan_persen", 0)
-          h_bersih_pcs = h_jual - (h_jual * h_pot / 100)
-          new_total = new_dikirim * h_bersih_pcs
-          st.markdown(f"💰 **Total Penjualan:** Rp {new_total:,.0f}")
+        curr_status = data_pilih.get("status", "Belum Lunas (Kontrabon)")
+        idx_stat = 0 if "Belum" in str(curr_status) else 1
+        new_status = st.selectbox(
+            "Status Pembayaran",
+            ["Belum Lunas (Kontrabon)", "Lunas"],
+            index=idx_stat,
+        )
 
-          col_update, col_delete = st.columns(2)
-          if col_update.button(
-              "🔄 Update / Lunasi Data", key=f"btn_up_{current_id}"
-          ):
-            try:
-              update_payload = {
-                  "tanggal": str(new_tanggal),
-                  "toko": new_toko,
-                  "produk": new_produk,
-                  "dikirim": new_dikirim,
-                  "status": new_status,
-                  "total_penjualan": new_total,
-              }
-              supabase.table("tabel_penjualan").update(update_payload).eq(
-                  "id", current_id
-              ).execute()
-              st.success("✅ Data berhasil diperbarui!")
-              st.rerun()
-            except Exception as e:
-              st.error(f"❌ Gagal: {e}")
+        new_dikirim = st.number_input(
+            "Jumlah Dikirim / Laku (Pcs)",
+            min_value=0,
+            step=1,
+            value=int(data_pilih.get("dikirim", 0)),
+        )
 
-          if col_delete.button("🗑️ Hapus Data", key=f"btn_del_{current_id}"):
-            try:
-              supabase.table("tabel_penjualan").delete().eq(
-                  "id", current_id
-              ).execute()
-              st.success("🗑️ Data berhasil dihapus!")
-              st.rerun()
-            except Exception as e:
-              st.error(f"❌ Gagal: {e}")
+        col_up, col_del = st.columns(2)
+        btn_update = col_up.form_submit_button(
+            "🔄 Update / Lunasi Data", use_container_width=True
+        )
+        btn_hapus = col_del.form_submit_button(
+            "🗑️ Hapus Transaksi", use_container_width=True
+        )
+
+        if btn_update:
+          try:
+            toko_match = next(
+                (
+                    t
+                    for t in data_toko
+                    if t["nama_toko"] == data_pilih.get("toko")
+                    and t.get("produk") == new_prod
+                ),
+                None,
+            )
+            if toko_match:
+              h_jual = toko_match.get("harga_jual", 0)
+              h_pot = toko_match.get("potongan_persen", 0)
+              h_bersih = h_jual - (h_jual * h_pot / 100)
+            else:
+              old_tot = float(data_pilih.get("total_penjualan", 0))
+              old_qty = float(data_pilih.get("dikirim", 1))
+              h_bersih = old_tot / max(old_qty, 1.0)
+
+            new_total = new_dikirim * h_bersih
+
+            supabase.table("tabel_penjualan").update({
+                "tanggal": str(new_tgl),
+                "produk": new_prod,
+                "dikirim": int(new_dikirim),
+                "status": new_status,
+                "total_penjualan": float(new_total),
+            }).eq("id", curr_id).execute()
+
+            st.success("✅ Data penjualan berhasil diperbarui/dilunasi!")
+            st.rerun()
+          except Exception as e:
+            st.error(f"❌ Gagal update: {e}")
+
+        if btn_hapus:
+          try:
+            supabase.table("tabel_penjualan").delete().eq(
+                "id", curr_id
+            ).execute()
+            st.success("🗑️ Data penjualan berhasil dihapus!")
+            st.rerun()
+          except Exception as e:
+            st.error(f"❌ Gagal menghapus: {e}")
 
   with tab3:
     st.markdown("#### 📦 Keseluruhan Data Penjualan & Kontrabon")
@@ -642,13 +658,11 @@ elif menu == "🛒 Kelola Penjualan":
       if "produksi" in df_penjualan.columns:
         df_penjualan = df_penjualan.drop(columns=["produksi"])
 
-
       def highlight_status(row):
         status = row.get("status", "Belum Lunas (Kontrabon)")
         if "Belum" in str(status):
           return ["background-color: rgba(255, 75, 75, 0.15)"] * len(row)
         return [""] * len(row)
-
 
       st.dataframe(
           df_penjualan.style.apply(highlight_status, axis=1),
@@ -656,7 +670,7 @@ elif menu == "🛒 Kelola Penjualan":
       )
 
 # -----------------------------------------------------------------------------
-# MENU 4: KELOLA PENGELUARAN
+# MENU 4: KELOLA PENGELUARAN (PENAMBAHAN STOK BAHAN OTOMATIS)
 # -----------------------------------------------------------------------------
 elif menu == "💸 Kelola Pengeluaran":
   st.markdown("### 📝 Kelola Catatan Pengeluaran")
@@ -683,7 +697,20 @@ elif menu == "💸 Kelola Pengeluaran":
               "pengeluaran": pengeluaran,
           }
           supabase.table("tabel_pengeluaran").insert(data_baru).execute()
-          st.success("✅ Data pengeluaran berhasil disimpan!")
+
+          # Tambah stok masuk secara otomatis ke gudang bahan
+          satuan_auto = (
+              "Kg"
+              if "kg" in nama_barang
+              or nama_barang in ["keripik pisang", "coklat", "matcha"]
+              else ("L" if nama_barang == "minyak" else "pcs")
+          )
+          update_stok_db(nama_barang, tambah_masuk=qty, satuan=satuan_auto)
+
+          st.success(
+              "✅ Data pengeluaran disimpan & stok bahan baku gudang otomatis"
+              " bertambah!"
+          )
           st.rerun()
         except Exception as e:
           st.error(f"❌ Gagal: {e}")
