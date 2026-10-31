@@ -80,3 +80,14 @@ h1, h2, h3, h4, h5, h6 {
     background-color: var(--background-color) !important;
     color: var(--text-color) !important;
 }
+
+/* PERBAIKAN: Menu Pop-up / Dropdown Bawaan Streamlit (Titik Tiga / Listbox) */
+div[data-baseweb="menu"], div[role="listbox"], div[data-baseweb="popover"] {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid rgba(128, 128, 128, 0.2) !important;
+}
+
+div[data-baseweb="menu"] div, div[role="listbox"] div, div[data-baseweb="popover"] div {
+    color: var(--text-color) !important;
+}
