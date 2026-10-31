@@ -63,8 +63,53 @@ supabase = init_connection()
 st.title("🍌 Wanna Be With U")
 
 # -----------------------------------------------------------------------------
-# NAVIGASI SIDEBAR
+# SIDEBAR: PENGATURAN TEMA & NAVIGASI MENU
 # -----------------------------------------------------------------------------
+st.sidebar.markdown("### 🎨 Tampilan Tema")
+pilih_tema = st.sidebar.radio(
+    "Mode Tampilan", ["☀️ Light Mode", "🌙 Dark Mode"], horizontal=True
+)
+
+# Terapkan styling instan berdasarkan pilihan tema di sidebar
+if pilih_tema == "🌙 Dark Mode":
+  st.markdown(
+      """
+        <style>
+        .stApp {
+            background-color: #0e1117 !important;
+            color: #fafafa !important;
+        }
+        [data-testid="stMetric"], [data-testid="stDataFrame"], [data-testid="stSidebar"] {
+            background-color: #161b22 !important;
+            color: #fafafa !important;
+            border-color: #30363d !important;
+        }
+        h1, h2, h3, p, span, label {
+            color: #fafafa !important;
+        }
+        </style>
+        """,
+      unsafe_allow_html=True,
+  )
+else:
+  st.markdown(
+      """
+        <style>
+        .stApp {
+            background-color: #f4f6f9 !important;
+            color: #1e293b !important;
+        }
+        [data-testid="stMetric"], [data-testid="stDataFrame"], [data-testid="stSidebar"] {
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+            border-color: #e2e8f0 !important;
+        }
+        </style>
+        """,
+      unsafe_allow_html=True,
+  )
+
+st.sidebar.markdown("---")
 st.sidebar.markdown("### 📌 Navigasi Menu")
 
 menu = st.sidebar.selectbox(
