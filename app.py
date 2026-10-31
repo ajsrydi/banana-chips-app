@@ -35,7 +35,7 @@ st.markdown(
 )
 
 
-# Fungsi untuk memuat file CSS eksternal (jika ada)
+# Fungsi untuk memuat file CSS eksternal
 def load_css(file_name):
   try:
     with open(file_name) as f:
@@ -59,55 +59,12 @@ def init_connection():
 
 supabase = init_connection()
 
-# -----------------------------------------------------------------------------
-# SIDEBAR: PENGATURAN TEMA & NAVIGASI MENU
-# -----------------------------------------------------------------------------
-st.sidebar.markdown("### 🎨 Tampilan Tema")
-pilih_tema = st.sidebar.radio(
-    "Mode Tampilan", ["☀️ Light Mode", "🌙 Dark Mode"], horizontal=True
-)
+# Header Utama
+st.title("🍌 Wanna Be With U")
 
-# Terapkan styling instan berdasarkan pilihan tema di sidebar (Header diperbaiki agar selalu terang saat Dark Mode)
-if pilih_tema == "🌙 Dark Mode":
-  st.markdown(
-      """
-        <style>
-        .stApp {
-            background-color: #0e1117 !important;
-            color: #fafafa !important;
-        }
-        [data-testid="stMetric"], [data-testid="stDataFrame"], [data-testid="stSidebar"] {
-            background-color: #161b22 !important;
-            color: #fafafa !important;
-            border-color: #30363d !important;
-        }
-        /* Memastikan judul utama, subjudul, dan teks markdown di dark mode berwarna putih */
-        h1, h2, h3, h4, h5, h6, span, label, .stMarkdown p {
-            color: #fafafa !important;
-        }
-        </style>
-        """,
-      unsafe_allow_html=True,
-  )
-else:
-  st.markdown(
-      """
-        <style>
-        .stApp {
-            background-color: #f4f6f9 !important;
-            color: #1e293b !important;
-        }
-        [data-testid="stMetric"], [data-testid="stDataFrame"], [data-testid="stSidebar"] {
-            background-color: #ffffff !important;
-            color: #1e293b !important;
-            border-color: #e2e8f0 !important;
-        }
-        </style>
-        """,
-      unsafe_allow_html=True,
-  )
-
-st.sidebar.markdown("---")
+# -----------------------------------------------------------------------------
+# SIDEBAR: NAVIGASI MENU
+# -----------------------------------------------------------------------------
 st.sidebar.markdown("### 📌 Navigasi Menu")
 
 menu = st.sidebar.selectbox(
@@ -123,9 +80,6 @@ menu = st.sidebar.selectbox(
         "🏪 Kelola Master Toko",
     ],
 )
-
-# Header Utama
-st.title("🍌 Wanna Be With U")
 
 
 def fetch_data(table_name):
