@@ -1,5 +1,6 @@
 streamlit
 supabase
 pandas
-openpyxl
 plotly
+openpyxl
+google-generativeai
