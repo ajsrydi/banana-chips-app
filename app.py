@@ -1,5 +1,7 @@
 import datetime
 import io
+import json
+import google.generativeai as genai
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -25,15 +27,16 @@ st.markdown(
     </style>
     <script>
     function lockSelectInputs() {
-        const selectInputs = document.querySelectorAll('div[data-baseweb="select"] input');
+        const selectInputs = document.querySelectorAll('div[data-baseweb="select"] input, div[data-baseweb="combobox"] input');
         selectInputs.forEach(input => {
             input.setAttribute('readonly', 'true');
             input.setAttribute('inputmode', 'none');
+            input.blur();
         });
     }
     document.addEventListener("click", lockSelectInputs);
-    const observer = new MutationObserver(lockSelectInputs);
-    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("focusin", lockSelectInputs);
+    setInterval(lockSelectInputs, 500);
     </script>
     """,
     unsafe_allow_html=True,
@@ -52,7 +55,7 @@ load_css("style.css")
 
 
 # -----------------------------------------------------------------------------
-# SUPABASE CONNECTION
+# SUPABASE & GEMINI AI CONNECTION
 # -----------------------------------------------------------------------------
 @st.cache_resource
 def init_connection():
@@ -62,6 +65,13 @@ def init_connection():
 
 
 supabase = init_connection()
+
+# Konfigurasi Google AI Studio Gemini API
+try:
+  genai.configure(api_key=st.secrets["gemini"]["api_key"])
+  GEMINI_READY = True
+except Exception:
+  GEMINI_READY = False
 
 # -----------------------------------------------------------------------------
 # SIDEBAR: JUDUL & NAVIGASI MENU
@@ -82,6 +92,7 @@ menu = st.sidebar.selectbox(
         "📈 Pantau Harga Bahan",
         "📥 Download Rekap Excel",
         "🏪 Kelola Master Toko",
+        "🤖 Asisten AI Database",
     ],
 )
 
@@ -405,16 +416,23 @@ elif menu == "📦 Produksi & Stok":
           if pilih_produk == "Coklat":
             # Resep: Keripik Pisang 0.75 Kg, Kemasan Coklat 11 pcs, Coklat 0.25 Kg, Minyak 0.10 L per 11 pcs
             faktor = jumlah_prod / 11.0
-            
-            update_stok_db("keripik pisang", tambah_keluar=0.75 * faktor, satuan="Kg")
-            update_stok_db("kemasan coklat", tambah_keluar=11.0 * faktor, satuan="pcs")
+
+            update_stok_db(
+                "keripik pisang", tambah_keluar=0.75 * faktor, satuan="Kg"
+            )
+            update_stok_db(
+                "kemasan coklat", tambah_keluar=11.0 * faktor, satuan="pcs"
+            )
             update_stok_db("coklat", tambah_keluar=0.25 * faktor, satuan="Kg")
             update_stok_db("minyak", tambah_keluar=0.10 * faktor, satuan="L")
 
           elif pilih_produk == "Matcha":
             st.info("Resep Matcha masih dalam tahap pengembangan (development).")
 
-          st.success("✅ Data produksi berhasil disimpan & stok bahan baku otomatis terpotong!")
+          st.success(
+              "✅ Data produksi berhasil disimpan & stok bahan baku otomatis"
+              " terpotong!"
+          )
           st.rerun()
         except Exception as e:
           st.error(f"❌ Gagal menyimpan produksi: {e}")
@@ -1111,3 +1129,122 @@ elif menu == "🏪 Kelola Master Toko":
     if list_toko:
       df_toko = pd.DataFrame(list_toko)
       st.dataframe(df_toko, use_container_width=True)
+
+# -----------------------------------------------------------------------------
+# MENU 10: ASISTEN AI DATABASE (GEMINI INTEGRATION DENGAN PREVIEW & KONFIRMASI)
+# -----------------------------------------------------------------------------
+elif menu == "🤖 Asisten AI Database":
+  st.markdown("### 🤖 Asisten AI Pintar (Bahasa Sehari-hari)")
+  st.markdown(
+      "Ketik perintah apa saja secara bebas untuk melihat, menambah, atau"
+      " mengubah data. AI akan menyiapkan pratinjau sebelum data disimpan."
+  )
+
+  if not GEMINI_READY:
+    st.error(
+        "⚠️ API Key Gemini belum dikonfigurasi di `secrets.toml`. Silakan"
+        " tambahkan terlebih dahulu."
+    )
+  else:
+    perintah_user = st.text_area(
+        "💬 Masukkan perintah Anda:",
+        placeholder=(
+            "Contoh: 'Tolong catat penjualan ke Toko SBR2 sebanyak 20 pcs varian"
+            " Coklat hari ini' atau 'Tampilkan data penjualan bulan ini'"
+        ),
+    )
+
+    if st.button("🚀 Proses Perintah dengan AI", use_container_width=True):
+      if not perintah_user.strip():
+        st.warning("⚠️ Silakan ketik perintah terlebih dahulu!")
+      else:
+        with st.spinner("🤖 AI sedang memproses perintah Anda..."):
+          try:
+            system_instruction = """
+                        Anda adalah AI Database Assistant untuk bisnis keripik "Wanna Be With U".
+                        Struktur Database yang tersedia:
+                        1. tabel_penjualan (kolom: id, tanggal (YYYY-MM-DD), toko, produk ("Coklat"/"Matcha"), dikirim (int), status ("Belum Lunas (Kontrabon)"/"Lunas"), total_penjualan (float))
+                        2. tabel_pengeluaran (kolom: id, tanggal, nama_barang, qty, pengeluaran)
+                        3. tabel_produksi (kolom: id, tanggal, produk, jumlah_produksi)
+                        4. tabel_toko (kolom: id, nama_toko, produk, harga_jual, potongan_persen)
+
+                        Tugas Anda: Analisis kalimat pengguna dan kembalikan HANYA format JSON murni (tanpa teks lain, tanpa markdown ```json) dengan struktur berikut:
+                        {
+                          "action": "INSERT" atau "UPDATE" atau "SELECT" atau "UNKNOWN",
+                          "table": "nama_tabel_yang_sesuai",
+                          "data": { dictionary kolom dan nilai yang akan dimasukkan/diubah },
+                          "filter": { kondisi untuk update/select misal {"id": 1} atau kosong {} },
+                          "pesan_konfirmasi": "Kalimat ramah yang menjelaskan apa yang akan dilakukan sistem."
+                        }
+                        Jika perintah tidak jelas atau berbahaya, set action ke UNKNOWN. Tanggal hari ini adalah """ + str(
+                datetime.date.today()
+            ) + """
+                        """
+
+            model = genai.GenerativeModel(
+                model_name="gemini-2.5-flash",
+                system_instruction=system_instruction,
+            )
+            response = model.generate_content(perintah_user)
+
+            clean_json_text = (
+                response.text.replace("```json", "")
+                .replace("```", "")
+                .strip()
+            )
+            ai_result = json.loads(clean_json_text)
+            st.session_state["ai_preview"] = ai_result
+
+          except Exception as e:
+            st.error(
+                f"❌ Gagal memproses dengan AI atau format tidak valid: {e}"
+            )
+
+    if "ai_preview" in st.session_state and st.session_state["ai_preview"]:
+      preview = st.session_state["ai_preview"]
+
+      st.markdown("---")
+      st.markdown("### 🛡️ Pratinjau & Validasi Perintah")
+      st.info(f"💡 **Analisis AI:** {preview.get('pesan_konfirmasi', '-')}")
+
+      st.write("**Detail Data yang Akan Diproses:**")
+      st.json(preview)
+
+      if preview.get("action") != "UNKNOWN":
+        col_ya, col_tidak = st.columns(2)
+
+        if col_ya.button("✅ Konfirmasi & Eksekusi ke Database"):
+          try:
+            action = preview.get("action")
+            table = preview.get("table")
+            data = preview.get("data")
+            filter_cond = preview.get("filter", {})
+
+            if action == "INSERT":
+              supabase.table(table).insert(data).execute()
+              st.success("✅ Data berhasil dimasukkan ke database!")
+            elif action == "UPDATE":
+              query = supabase.table(table).update(data)
+              for k, v in filter_cond.items():
+                query = query.eq(k, v)
+              query.execute()
+              st.success("✅ Data berhasil diperbarui!")
+            elif action == "SELECT":
+              res = supabase.table(table).select("*").execute()
+              st.dataframe(pd.DataFrame(res.data), use_container_width=True)
+
+            del st.session_state["ai_preview"]
+            st.rerun()
+
+          except Exception as db_err:
+            st.error(f"❌ Gagal mengeksekusi ke database: {db_err}")
+
+        if col_tidak.button("❌ Batalkan"):
+          del st.session_state["ai_preview"]
+          st.warning("⚠️ Perintah dibatalkan.")
+          st.rerun()
+      else:
+        st.error(
+            "⚠️ AI tidak mengenali perintah tersebut atau perintah tidak aman."
+            " Silakan coba ketik dengan kalimat yang lebih spesifik."
+        )
