@@ -1,7 +1,5 @@
 import datetime
 import io
-import json
-import google.generativeai as genai
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -55,7 +53,7 @@ load_css("style.css")
 
 
 # -----------------------------------------------------------------------------
-# SUPABASE & GEMINI AI CONNECTION
+# SUPABASE CONNECTION
 # -----------------------------------------------------------------------------
 @st.cache_resource
 def init_connection():
@@ -66,15 +64,8 @@ def init_connection():
 
 supabase = init_connection()
 
-# Konfigurasi Google AI Studio Gemini API
-try:
-  genai.configure(api_key=st.secrets["gemini"]["api_key"])
-  GEMINI_READY = True
-except Exception:
-  GEMINI_READY = False
-
 # -----------------------------------------------------------------------------
-# SIDEBAR: JUDUL & NAVIGASI MENU
+# SIDEBAR: JUDUL & NAVIGASI MENU (TANPA AI)
 # -----------------------------------------------------------------------------
 st.sidebar.title("🍌 Wanna Be With U")
 st.sidebar.markdown("---")
@@ -92,7 +83,6 @@ menu = st.sidebar.selectbox(
         "📈 Pantau Harga Bahan",
         "📥 Download Rekap Excel",
         "🏪 Kelola Master Toko",
-        "🤖 Asisten AI Database",
     ],
 )
 
@@ -223,7 +213,7 @@ if menu == "🏠 Home":
   total_kirim_matcha = sum(
       item.get("dikirim", 0)
       for item in penjualan
-      if item.get("produk") == "Matcha"
+      if item.get("produk", "Matcha") == "Matcha"
   )
   stok_matcha = total_prod_matcha - total_kirim_matcha
 
@@ -414,9 +404,7 @@ elif menu == "📦 Produksi & Stok":
 
           # LOGIKA PEMOTONGAN STOK BERDASARKAN RESEP PER 11 PCS
           if pilih_produk == "Coklat":
-            # Resep: Keripik Pisang 0.75 Kg, Kemasan Coklat 11 pcs, Coklat 0.25 Kg, Minyak 0.10 L per 11 pcs
             faktor = jumlah_prod / 11.0
-
             update_stok_db(
                 "keripik pisang", tambah_keluar=0.75 * faktor, satuan="Kg"
             )
@@ -425,7 +413,6 @@ elif menu == "📦 Produksi & Stok":
             )
             update_stok_db("coklat", tambah_keluar=0.25 * faktor, satuan="Kg")
             update_stok_db("minyak", tambah_keluar=0.10 * faktor, satuan="L")
-
           elif pilih_produk == "Matcha":
             st.info("Resep Matcha masih dalam tahap pengembangan (development).")
 
@@ -712,7 +699,6 @@ elif menu == "💸 Kelola Pengeluaran":
           }
           supabase.table("tabel_pengeluaran").insert(data_baru).execute()
 
-          # LOGIKA PENAMBAHAN STOK MASUK OTOMATIS KETIKA BELANJA
           satuan_auto = (
               "Kg"
               if "kg" in nama_barang
@@ -721,7 +707,10 @@ elif menu == "💸 Kelola Pengeluaran":
           )
           update_stok_db(nama_barang, tambah_masuk=qty, satuan=satuan_auto)
 
-          st.success("✅ Data pengeluaran disimpan & stok bahan baku gudang otomatis bertambah!")
+          st.success(
+              "✅ Data pengeluaran disimpan & stok bahan baku gudang otomatis"
+              " bertambah!"
+          )
           st.rerun()
         except Exception as e:
           st.error(f"❌ Gagal: {e}")
@@ -1129,176 +1118,3 @@ elif menu == "🏪 Kelola Master Toko":
     if list_toko:
       df_toko = pd.DataFrame(list_toko)
       st.dataframe(df_toko, use_container_width=True)
-
-# # -----------------------------------------------------------------------------
-# MENU 10: ASISTEN AI DATABASE (DENGAN VALIDASI DUA ARAH & PERTANYAAN INTERAKTIF)
-# -----------------------------------------------------------------------------
-elif menu == "🤖 Asisten AI Database":
-  st.markdown("### 🤖 Asisten AI Pintar (Bahasa Sehari-hari)")
-  st.markdown(
-      "Ketik perintah apa saja secara bebas. Jika ada data wajib yang kurang,"
-      " AI akan menanyakannya kembali kepada Anda secara interaktif."
-  )
-
-  if not GEMINI_READY:
-    st.error(
-        "⚠️ API Key Gemini belum dikonfigurasi di `secrets.toml`. Silakan"
-        " tambahkan terlebih dahulu."
-    )
-  else:
-    # Input teks bebas dari pengguna
-    perintah_user = st.text_area(
-        "💬 Masukkan perintah Anda:",
-        placeholder=(
-            "Contoh: 'Tolong catat penjualan ke Toko SBR2' (Jika kurang jumlah"
-            " pcs, AI akan menanyakan jumlahnya)"
-        ),
-        key="input_ai_perintah",
-    )
-
-    if st.button("🚀 Proses Perintah dengan AI", use_container_width=True):
-      if not perintah_user.strip():
-        st.warning("⚠️ Silakan ketik perintah terlebih dahulu!")
-      else:
-        with st.spinner("🤖 AI sedang memvalidasi perintah Anda..."):
-          try:
-            system_instruction = """
-                        Anda adalah AI Database Assistant yang cerdas dan interaktif untuk bisnis keripik "Wanna Be With U".
-                        Struktur Database dan kolom wajibnya:
-                        1. tabel_penjualan -> Wajib ada: toko, produk, dikirim. Opsional: tanggal (default hari ini), status (default "Belum Lunas (Kontrabon)").
-                        2. tabel_pengeluaran -> Wajib ada: nama_barang, qty, pengeluaran. Opsional: tanggal (default hari ini).
-                        3. tabel_produksi -> Wajib ada: produk, jumlah_produksi. Opsional: tanggal (default hari ini).
-                        4. tabel_toko -> Wajib ada: nama_toko, produk, harga_jual. Opsional: potongan_persen (default 0).
-
-                        Tugas Anda:
-                        - Analisis kalimat pengguna.
-                        - Jika untuk aksi INSERT/UPDATE ada kolom wajib yang **belum lengkap/belum disebutkan**, set action ke "ASK_MORE", dan tuliskan pertanyaan di "pesan_konfirmasi" untuk meminta kekurangan data tersebut kepada pengguna.
-                        - Jika kolom wajib sudah lengkap, set action ke "INSERT", "UPDATE", atau "SELECT", lalu berikan data dictionary-nya.
-                        - Kembalikan HANYA format JSON murni tanpa markdown ```json.
-                        
-                        Struktur JSON:
-                        {
-                          "action": "INSERT", "UPDATE", "SELECT", atau "ASK_MORE",
-                          "table": "nama_tabel",
-                          "data": { kolom dan nilainya },
-                          "filter": { kondisi untuk update/select },
-                          "pesan_konfirmasi": "Pertanyaan interaktif jika kurang data, atau kalimat ramah konfirmasi jika sudah lengkap."
-                        }
-                        Tanggal hari ini adalah """ + str(
-                datetime.date.today()
-            ) + """
-                        """
-
-            model = genai.GenerativeModel(
-                model_name="gemini-3.8-flash",
-                system_instruction=system_instruction,
-            )
-            response = model.generate_content(perintah_user)
-
-            clean_json_text = (
-                response.text.replace("```json", "")
-                .replace("```", "")
-                .strip()
-            )
-            ai_result = json.loads(clean_json_text)
-            st.session_state["ai_preview"] = ai_result
-
-          except Exception as e:
-            st.error(
-                f"❌ Gagal memproses dengan AI atau format tidak valid: {e}"
-            )
-
-    # Tanggapan AI (Dua Arah: Tanya balik jika kurang, atau Tampilkan Preview jika lengkap)
-    if "ai_preview" in st.session_state and st.session_state["ai_preview"]:
-      preview = st.session_state["ai_preview"]
-      action_type = preview.get("action")
-
-      st.markdown("---")
-
-      # SKenario 1: AI BERTANYA KEMBALI KARENA ADA KOLOM WAJIB YANG BELUM LENGKAP
-      if action_type == "ASK_MORE":
-        st.warning(
-            f"🤖 **AI Bertanya:** {preview.get('pesan_konfirmasi', 'Ada informasi penting yang belum lengkap.')}"
-        )
-        st.info(
-            "💡 Silakan ketik tambahan informasi Anda di kolom input di atas"
-            " (misalnya: 'Jumlahnya 20 pcs') dan klik proses lagi."
-        )
-
-        if st.button("❌ Batalkan Sesi Ini"):
-          del st.session_state["ai_preview"]
-          st.rerun()
-
-      # Skenario 2: DATA LENGKAP -> TAMPILKAN PREVIEW & KONFIRMASI
-      elif action_type in ["INSERT", "UPDATE", "SELECT"]:
-        st.markdown("### 🛡️ Pratinjau & Validasi Perintah")
-        st.info(
-            f"💡 **Analisis AI:** {preview.get('pesan_konfirmasi', 'Siap diproses.')}"
-        )
-
-        st.write("**Detail Data yang Akan Diproses:**")
-        st.json(preview)
-
-        col_ya, col_tidak = st.columns(2)
-
-        if col_ya.button("✅ Konfirmasi & Eksekusi ke Database"):
-          try:
-            table = preview.get("table")
-            data = preview.get("data")
-            filter_cond = preview.get("filter", {})
-
-            # Tambahan otomatis nilai default tanggal jika belum ada pada data insert
-            if action_type == "INSERT" and "tanggal" not in data:
-              data["tanggal"] = str(datetime.date.today())
-
-            if action_type == "INSERT":
-              # Validasi tambahan khusus tabel penjualan untuk menghitung total otomatis
-              if table == "tabel_penjualan":
-                # Ambil harga dari master toko jika belum ada total_penjualan
-                if "total_penjualan" not in data or not data["total_penjualan"]:
-                  toko_cek = data.get("toko")
-                  prod_cek = data.get("produk", "Coklat")
-                  dikirim_jml = float(data.get("dikirim", 0))
-
-                  toko_db = supabase.table("tabel_toko").select("*").eq("nama_toko", toko_cek).eq("produk", prod_cek).execute().data
-                  if toko_db:
-                    h_jual = toko_db[0].get("harga_jual", 0)
-                    h_pot = toko_db[0].get("potongan_persen", 0)
-                    data["total_penjualan"] = dikirim_jml * (
-                        h_jual - (h_jual * h_pot / 100)
-                    )
-                  else:
-                    data["total_penjualan"] = 0.0
-
-                if "status" not in data:
-                  data["status"] = "Belum Lunas (Kontrabon)"
-
-              supabase.table(table).insert(data).execute()
-              st.success("✅ Data berhasil dimasukkan ke database!")
-
-            elif action_type == "UPDATE":
-              query = supabase.table(table).update(data)
-              for k, v in filter_cond.items():
-                query = query.eq(k, v)
-              query.execute()
-              st.success("✅ Data berhasil diperbarui!")
-
-            elif action_type == "SELECT":
-              res = supabase.table(table).select("*").execute()
-              st.dataframe(pd.DataFrame(res.data), use_container_width=True)
-
-            del st.session_state["ai_preview"]
-            st.rerun()
-
-          except Exception as db_err:
-            st.error(f"❌ Gagal mengeksekusi ke database: {db_err}")
-
-        if col_tidak.button("❌ Batalkan"):
-          del st.session_state["ai_preview"]
-          st.warning("⚠️ Perintah dibatalkan.")
-          st.rerun()
-      else:
-        st.error(
-            "⚠️ AI tidak mengenali perintah tersebut. Silakan ulangi dengan"
-            " kalimat yang lebih jelas."
-        )
