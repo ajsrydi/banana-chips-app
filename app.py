@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# CSS & SCRIPT UNTUK MENCEGAH KEYBOARD HP MUNCUL PADA DROPDOWN
+# CSS & SCRIPT UNTUK MENCEGAH KEYBOARD HP MUNCUL PADA DROPDOWN & MULTISELECT
 # -----------------------------------------------------------------------------
 st.markdown(
     """
@@ -25,20 +25,27 @@ st.markdown(
     </style>
     <script>
     function lockSelectInputs() {
-        const selectInputs = document.querySelectorAll('div[data-baseweb="select"] input, div[data-baseweb="combobox"] input');
+        const selectInputs = document.querySelectorAll(
+            'div[data-baseweb="select"] input, ' +
+            'div[data-baseweb="combobox"] input, ' +
+            'div[data-baseweb="multi-select"] input'
+        );
         selectInputs.forEach(input => {
-            input.setAttribute('readonly', 'true');
+            input.setAttribute('readonly', 'readonly');
             input.setAttribute('inputmode', 'none');
             input.blur();
         });
     }
-    document.addEventListener("click", lockSelectInputs);
-    document.addEventListener("focusin", lockSelectInputs);
-    setInterval(lockSelectInputs, 500);
+    // Memicu penguncian di berbagai event sentuh/klik HP
+    document.addEventListener("click", lockSelectInputs, true);
+    document.addEventListener("focusin", lockSelectInputs, true);
+    document.addEventListener("touchstart", lockSelectInputs, true);
+    setInterval(lockSelectInputs, 150);
     </script>
     """,
     unsafe_allow_html=True,
 )
+
 
 
 def load_css(file_name):
