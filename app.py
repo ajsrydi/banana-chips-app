@@ -14,43 +14,40 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# CSS & SCRIPT UNTUK MENCEGAH KEYBOARD HP MUNCUL PADA DROPDOWN
+# SCRIPT AGENSI PENCEGAH KEYBOARD HP PADA DROPDOWN (AGRESIF)
 # -----------------------------------------------------------------------------
 st.markdown(
     """
     <style>
-    input {
+    /* Sembunyikan kedipan kursor teks */
+    div[data-baseweb="select"] input, div[data-baseweb="combobox"] input {
         caret-color: transparent !important;
     }
     </style>
     <script>
-    function preventKeyboard() {
+    // Mencegah fokus masuk ke input dropdown secara mutlak
+    document.addEventListener('focus', function(e) {
+        if (e.target && (e.target.matches('div[data-baseweb="select"] input') || e.target.matches('div[data-baseweb="combobox"] input'))) {
+            e.target.blur();
+        }
+    }, true);
+
+    function forceLockInputs() {
         const inputs = document.querySelectorAll('div[data-baseweb="select"] input, div[data-baseweb="combobox"] input');
         inputs.forEach(input => {
             input.setAttribute('readonly', 'true');
             input.setAttribute('inputmode', 'none');
-            
-            // Cegah keyboard muncul setelah dropdown terbuka
-            if (!input.dataset.blurAttached) {
-                input.dataset.blurAttached = "true";
-                input.addEventListener('focus', function() {
-                    setTimeout(() => {
-                        this.blur();
-                    }, 50);
-                });
-            }
         });
     }
 
-    // Jalankan secara berkala dan saat ada perubahan DOM
-    const observer = new MutationObserver(preventKeyboard);
-    observer.observe(document.body, { childList: true, subtree: true });
-    document.addEventListener("DOMContentLoaded", preventKeyboard);
-    document.addEventListener("click", preventKeyboard);
+    // Jalankan secara berkala untuk menangkap elemen dropdown baru
+    setInterval(forceLockInputs, 100);
+    document.addEventListener("click", forceLockInputs, true);
     </script>
     """,
     unsafe_allow_html=True,
 )
+
 
 
 
