@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# CSS & SCRIPT UNTUK MENCEGAH KEYBOARD HP MUNCUL PADA DROPDOWN & MULTISELECT
+# CSS & SCRIPT UNTUK MENCEGAH KEYBOARD HP MUNCUL PADA DROPDOWN
 # -----------------------------------------------------------------------------
 st.markdown(
     """
@@ -24,27 +24,34 @@ st.markdown(
     }
     </style>
     <script>
-    function lockSelectInputs() {
-        const selectInputs = document.querySelectorAll(
-            'div[data-baseweb="select"] input, ' +
-            'div[data-baseweb="combobox"] input, ' +
-            'div[data-baseweb="multi-select"] input'
-        );
-        selectInputs.forEach(input => {
-            input.setAttribute('readonly', 'readonly');
+    function preventKeyboard() {
+        const inputs = document.querySelectorAll('div[data-baseweb="select"] input, div[data-baseweb="combobox"] input');
+        inputs.forEach(input => {
+            input.setAttribute('readonly', 'true');
             input.setAttribute('inputmode', 'none');
-            input.blur();
+            
+            // Cegah keyboard muncul setelah dropdown terbuka
+            if (!input.dataset.blurAttached) {
+                input.dataset.blurAttached = "true";
+                input.addEventListener('focus', function() {
+                    setTimeout(() => {
+                        this.blur();
+                    }, 50);
+                });
+            }
         });
     }
-    // Memicu penguncian di berbagai event sentuh/klik HP
-    document.addEventListener("click", lockSelectInputs, true);
-    document.addEventListener("focusin", lockSelectInputs, true);
-    document.addEventListener("touchstart", lockSelectInputs, true);
-    setInterval(lockSelectInputs, 150);
+
+    // Jalankan secara berkala dan saat ada perubahan DOM
+    const observer = new MutationObserver(preventKeyboard);
+    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("DOMContentLoaded", preventKeyboard);
+    document.addEventListener("click", preventKeyboard);
     </script>
     """,
     unsafe_allow_html=True,
 )
+
 
 
 
