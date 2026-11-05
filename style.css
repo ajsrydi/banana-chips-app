@@ -46,7 +46,7 @@ div.stFormSubmitButton > button,
     font-weight: 600 !important;
     border: none !important;
     padding: 0.6rem 1.2rem !important;
-    background-color: #2563eb !important; /* Warna dasar tombol (Biru) */
+    background-color: #2563eb !important;
     color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
 }
@@ -88,11 +88,10 @@ div.stFormSubmitButton > button:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
-/* Kotak Input & Form */
-.stTextInput input, .stNumberInput input, .stSelectbox select, .stDateInput input {
-    border-radius: 10px !important;
-    border: 1px internal rgba(128, 128, 128, 0.25) !important;
-    background-color: var(--background-color) !important;
-    color: var(--text-color) !important;
-    padding: 0.5rem 0.75rem !important;
+/* CEGAH TOTAL KEYBOARD HP MUNCUL PADA DROPDOWN & MULTISELECT */
+div[data-baseweb="select"] input, 
+div[data-baseweb="combobox"] input, 
+div[data-baseweb="multi-select"] input {
+    caret-color: transparent !important;
+    pointer-events: none !important;
 }
